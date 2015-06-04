@@ -21,6 +21,8 @@
 @synthesize province;
 @synthesize postalcode;
 
+@synthesize clientIDSAQ;
+
 @synthesize clientTypeLivr;
 @synthesize clientTypeFact;
 @synthesize clientJourLivr;

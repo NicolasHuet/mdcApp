@@ -15,6 +15,7 @@
 @synthesize commRepID;
 @synthesize commIDSAQ;
 @synthesize commClientID;
+@synthesize commClientName;
 @synthesize commTypeClntID;
 @synthesize commTypeLivrID;
 @synthesize commDateFact;
@@ -24,7 +25,10 @@
 @synthesize commPartSuccID;
 @synthesize commCommentaire;
 @synthesize commLastUpdated;
+@synthesize commIsDraftModified;
 
 @synthesize commDataSource;
+
+@synthesize remoteCommID;
 
 @end

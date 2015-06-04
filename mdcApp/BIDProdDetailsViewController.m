@@ -14,6 +14,7 @@
 @implementation BIDProdDetailsViewController
 
 @synthesize isInSelectMode;
+@synthesize pickupSource;
 
 - (id)initWithStyle:(UITableViewStyle)style
 {
@@ -80,7 +81,19 @@
     self.prodEmpaquement.text = self.product.vinEmpaq;
     self.prodFormat.text = self.product.vinFormat;
     
-    self.prodJrsLibere.text = self.product.vinDateAchat;    
+    if(([self.product.vinDateAchat  isEqual:@""]) || ([self.product.vinDateAchat  isEqual:@"0000-00-00"])){
+        self.prodJrsLibere.text = @"N/A";
+    } else {
+        NSDateFormatter *df=[[NSDateFormatter alloc] init];
+        [df setDateFormat:@"yyyy-MM-dd"];
+        NSDate *date1 = [df dateFromString:self.product.vinDateAchat];
+        NSDate *date2 = [NSDate date];
+        NSTimeInterval secondsBetween = [date2 timeIntervalSinceDate:date1];
+        int numberOfDays = secondsBetween / 86400;
+        self.prodJrsLibere.text = [NSString stringWithFormat:@"%@ (%i)", self.product.vinDateAchat, numberOfDays];
+    }
+    
+    
     
     int tmpInitialStock = [self.product.vinQteAchat intValue];
     int tmpAssigned = [self.product.vinTotalAssigned intValue];
@@ -168,35 +181,54 @@
     
     MDCAppDelegate *appDelegate = (MDCAppDelegate *)[[UIApplication sharedApplication] delegate];
     
-    if(appDelegate.cartProducts == nil){
-        appDelegate.cartProducts = [[NSMutableArray alloc] init];
+    if([self.pickupSource isEqual: @"Commande"]){
+        if(appDelegate.cartProducts == nil){
+            appDelegate.cartProducts = [[NSMutableArray alloc] init];
+        }
+        if(appDelegate.cartQties == nil){
+            appDelegate.cartQties = [[NSMutableArray alloc] init];
+        }
+        
+        if(appDelegate.cartTransType == nil){
+            appDelegate.cartTransType = [[NSMutableArray alloc] init];
+        }
+        
+        int testForZero = [self.addQty.text intValue];
+        
+        if(testForZero > 0){
+            [appDelegate.cartProducts addObject:self.product];
+            [appDelegate.cartQties addObject:self.addQty.text];
+            [appDelegate.cartTransType addObject:@"BuyNow"];
+            
+            UIActionSheet *actionSheet = [[UIActionSheet alloc] initWithTitle:@"Item Ajouté au panier avec succès" delegate:self cancelButtonTitle:nil destructiveButtonTitle:nil otherButtonTitles:@"OK", nil];
+            actionSheet.actionSheetStyle = UIActionSheetStyleBlackTranslucent;
+            [actionSheet showFromToolbar:self.navigationController.toolbar];
+        }
+    } else {
+        if(appDelegate.reservProducts == nil){
+            appDelegate.reservProducts = [[NSMutableArray alloc] init];
+        }
+        if(appDelegate.reservQties == nil){
+            appDelegate.reservQties = [[NSMutableArray alloc] init];
+        }
+        
+        if(appDelegate.reservTransType == nil){
+            appDelegate.reservTransType = [[NSMutableArray alloc] init];
+        }
+        
+        int testForZero = [self.addQty.text intValue];
+        
+        if(testForZero > 0){
+            [appDelegate.reservProducts addObject:self.product];
+            [appDelegate.reservQties addObject:self.addQty.text];
+            [appDelegate.reservTransType addObject:@"BuyNow"];
+            
+            UIActionSheet *actionSheet = [[UIActionSheet alloc] initWithTitle:@"Item Ajouté à la réservation avec succès" delegate:self cancelButtonTitle:nil destructiveButtonTitle:nil otherButtonTitles:@"OK", nil];
+            actionSheet.actionSheetStyle = UIActionSheetStyleBlackTranslucent;
+            [actionSheet showFromToolbar:self.navigationController.toolbar];
+        }
     }
-    if(appDelegate.cartQties == nil){
-        appDelegate.cartQties = [[NSMutableArray alloc] init];
-    }
     
-    if(appDelegate.cartTransType == nil){
-        appDelegate.cartTransType = [[NSMutableArray alloc] init];
-    }
-    
-    [appDelegate.cartProducts addObject:self.product];
-    [appDelegate.cartQties addObject:self.addQty.text];
-    [appDelegate.cartTransType addObject:@"BuyNow"];
-    
-    UIActionSheet *actionSheet = [[UIActionSheet alloc] initWithTitle:@"Item Ajouté au panier avec succès" delegate:self cancelButtonTitle:nil destructiveButtonTitle:nil otherButtonTitles:@"OK", nil];
-    actionSheet.actionSheetStyle = UIActionSheetStyleBlackTranslucent;
-    [actionSheet showFromToolbar:self.navigationController.toolbar];
-    
-    /*
-    NSString *msg = @"L'item a été ajouté au panier avec succès !";
-    
-    UIAlertView *alert = [[UIAlertView alloc]
-                          initWithTitle:@"Item Ajouté"
-                          message:msg
-                          delegate:self
-                          cancelButtonTitle:@"OK" otherButtonTitles:nil];
-    [alert show];
-    */
     
 }
 

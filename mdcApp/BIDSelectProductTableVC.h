@@ -20,6 +20,6 @@
 @property (nonatomic) Boolean isInSelectMode;
 
 @property (strong, nonatomic) IBOutlet UISearchBar *productSearchBar;
-
+@property (strong,nonatomic) NSString *pickupSource;
 
 @end

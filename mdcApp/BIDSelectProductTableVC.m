@@ -15,6 +15,7 @@
 @synthesize filteredProductsArray;
 @synthesize productSearchBar;
 @synthesize isInSelectMode;
+@synthesize pickupSource;
 
 Client *currentClient;
 sqlite3 *database;
@@ -55,7 +56,7 @@ sqlite3 *database;
         NSAssert(0, @"Failed to open database");
     }
     
-    NSString *query = [NSString stringWithFormat:@"SELECT * FROM Vins WHERE vinDisponible = 1"];
+    NSString *query = [NSString stringWithFormat:@"SELECT * FROM Vins WHERE vinDisponible = 1 ORDER BY vinNom"];
     
     sqlite3_stmt *statement;
     if (sqlite3_prepare_v2(database, [query UTF8String],
@@ -201,6 +202,7 @@ sqlite3 *database;
             
         }
         sqlite3_finalize(statement);
+        sqlite3_close(database);
     }
     
     NSLog(@"Number of products : %i", numberOfRows);
@@ -213,7 +215,10 @@ sqlite3 *database;
 }
 
 -(void) viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:YES];
+    [[self tableView] reloadData];
     
+    /*
     self.productArray = [[NSMutableArray alloc] init];
     
     int numberOfRows = 0;
@@ -227,7 +232,7 @@ sqlite3 *database;
         NSAssert(0, @"Failed to open database");
     }
     
-    NSString *query = [NSString stringWithFormat:@"SELECT * FROM Vins WHERE vinDisponible = 1"];
+    NSString *query = [NSString stringWithFormat:@"SELECT * FROM Vins WHERE vinDisponible = 1 ORDER BY vinNom"];
     
     sqlite3_stmt *statement;
     if (sqlite3_prepare_v2(database, [query UTF8String],
@@ -258,28 +263,26 @@ sqlite3 *database;
             double vinPrixVente;
             int vinEpuise;
             int vinDisponible;
-            
-            /*
-             1- vinID INT PRIMARY KEY,
-             2- vinNumero TEXT,
-             3- vinNom TEXT,
-             4- vinCouleurID INT,
-             5- vinEmpaq INT,
-             6- vinRegionID INT,
-             7- vinNoDemande TEXT,
-             8- vinIDFournisseur TEXT,
-             9- vinDateAchat TEXT,
-             10- vinQteAchat INT,
-             11- vinTotalAssigned INT,
-             12- vinFormat TEXT,
-             13- vinPrixAchat REAL,
-             14- vinFraisEtiq REAL,
-             15- vinFraisBout REAL,
-             16- vinFraisBoutPart REAL,
-             17- vinPrixVente REAL,
-             18- vinEpuise INT,
-             19- vinDisponible INT
-             */
+     
+             //1- vinID INT PRIMARY KEY,
+             //2- vinNumero TEXT,
+             //3- vinNom TEXT,
+             //4- vinCouleurID INT,
+             //5- vinEmpaq INT,
+             //6- vinRegionID INT,
+             //7- vinNoDemande TEXT,
+             //8- vinIDFournisseur TEXT,
+             //9- vinDateAchat TEXT,
+             //10- vinQteAchat INT,
+             //11- vinTotalAssigned INT,
+             //12- vinFormat TEXT,
+             //13- vinPrixAchat REAL,
+             //14- vinFraisEtiq REAL,
+             //15- vinFraisBout REAL,
+             //16- vinFraisBoutPart REAL,
+             //17- vinPrixVente REAL,
+             //18- vinEpuise INT,
+             //19- vinDisponible INT
             
             columnIntValue = (int)sqlite3_column_int(statement, 0);
             vinID = columnIntValue;
@@ -380,7 +383,8 @@ sqlite3 *database;
     self.filteredProductsArray = [NSMutableArray arrayWithCapacity:[productArray count]];
     
     // Reload the table
-    [[self tableView] reloadData];
+    */
+    
     
 }
 
@@ -403,12 +407,17 @@ sqlite3 *database;
         }
         BIDProdDetailsViewController *prodDetailsViewController = segue.destinationViewController;
         prodDetailsViewController.isInSelectMode = YES;
+        prodDetailsViewController.pickupSource = self.pickupSource;
         prodDetailsViewController.product = product;
+        [self.productSearchBar resignFirstResponder];
+        self.productSearchBar.text = @"";
     }
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
+    //[self performSelector:@selector(searchBarCancelButtonClicked:) withObject:self.productSearchBar afterDelay: 0.1];
+    [self.productSearchBar resignFirstResponder];
     static NSString *CellIdentifier = @"prodCell";
     UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
     if ([cell.reuseIdentifier isEqualToString:CellIdentifier])
@@ -525,6 +534,10 @@ sqlite3 *database;
     tableView.rowHeight = 130; // or some other height
     
     //self.tableView.rowHeight = 71;
+}
+
+- (void)searchBarCancelButtonClicked:(UISearchBar *) aSearchBar {
+    [aSearchBar resignFirstResponder];
 }
 
 

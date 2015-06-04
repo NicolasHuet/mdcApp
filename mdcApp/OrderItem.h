@@ -13,5 +13,6 @@
 @property (nonatomic, strong) NSString *vinID;
 @property (nonatomic, strong) NSString *vinQte;
 @property (nonatomic, strong) NSString *vinOverideFrais;
+@property (nonatomic, strong) NSString *localOrderID;
 
 @end

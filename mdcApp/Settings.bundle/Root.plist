@@ -5,6 +5,28 @@
 	<key>PreferenceSpecifiers</key>
 	<array>
 		<dict>
+			<key>Type</key>
+			<string>PSGroupSpecifier</string>
+			<key>Title</key>
+			<string>Serveur</string>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSTextFieldSpecifier</string>
+			<key>Title</key>
+			<string>Adresse</string>
+			<key>Key</key>
+			<string>SrvAddr</string>
+			<key>AutocorrectionType</key>
+			<string>No</string>
+			<key>AutocapitalizationType</key>
+			<string>None</string>
+			<key>KeyboardType</key>
+			<string>URL</string>
+			<key>IsSecure</key>
+			<false/>
+		</dict>
+		<dict>
 			<key>Title</key>
 			<string>Représentant</string>
 			<key>Type</key>

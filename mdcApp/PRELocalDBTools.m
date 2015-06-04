@@ -37,7 +37,7 @@ MDCAppDelegate *appDelegate;
     NSURLSessionConfiguration *defaultConfigObject = [NSURLSessionConfiguration defaultSessionConfiguration];
     NSURLSession *defaultSession = [NSURLSession sessionWithConfiguration: defaultConfigObject delegate: nil delegateQueue: [NSOperationQueue mainQueue]];
     
-    NSString *fullURL = @"http://www.nicolashuet.com/mdc/mobileSync/loginProcessJson.php";
+    NSString *fullURL = [NSString stringWithFormat:@"%@/mobileSync/loginProcessJson.php", appDelegate.syncServer];
     NSURL * url = [NSURL URLWithString:fullURL];
     NSMutableURLRequest * urlRequest = [NSMutableURLRequest requestWithURL:url];
     NSString * params = [NSString stringWithFormat:@"pseudo=%@&mot_de_passe=%@",tmpUser, tmpPassword];
@@ -237,7 +237,7 @@ MDCAppDelegate *appDelegate;
     NSURLSessionConfiguration *defaultConfigObject = [NSURLSessionConfiguration defaultSessionConfiguration];
     NSURLSession *defaultSession = [NSURLSession sessionWithConfiguration: defaultConfigObject delegate: nil delegateQueue: [NSOperationQueue mainQueue]];
     
-    NSString *fullURL = @"http://www.nicolashuet.com/mdc/mobileSync/typesClientJson.php";
+    NSString *fullURL = [NSString stringWithFormat:@"%@/mobileSync/typesClientJson.php", appDelegate.syncServer];
     NSURL * url = [NSURL URLWithString:fullURL];
     NSMutableURLRequest * urlRequest = [NSMutableURLRequest requestWithURL:url];
     NSString * params = @"";
@@ -254,7 +254,7 @@ MDCAppDelegate *appDelegate;
                                                            
                                                            for (int i=0; i<[rows count]; i++) {
                                                                
-                                                               char *update = "INSERT OR REPLACE INTO TypeClient "
+                                                               char *update = "INSERT INTO TypeClient "
                                                                "(typeClntID, typeClntName) "
                                                                "VALUES (?, ?);";
                                                                
@@ -303,7 +303,7 @@ MDCAppDelegate *appDelegate;
     NSURLSessionConfiguration *defaultConfigObject = [NSURLSessionConfiguration defaultSessionConfiguration];
     NSURLSession *defaultSession = [NSURLSession sessionWithConfiguration: defaultConfigObject delegate: nil delegateQueue: [NSOperationQueue mainQueue]];
     
-    NSString *fullURL = [NSString stringWithFormat:@"http://www.nicolashuet.com/mdc/mobileSync/clientsRepJson.php?repID=%@",repID];
+    NSString *fullURL = [NSString stringWithFormat:@"%@/mobileSync/clientsRepJson.php?repID=%@", appDelegate.syncServer, repID];
     NSURL * url = [NSURL URLWithString:fullURL];
     NSMutableURLRequest * urlRequest = [NSMutableURLRequest requestWithURL:url];
     NSString * params = @"";
@@ -320,7 +320,7 @@ MDCAppDelegate *appDelegate;
                                                            
                                                            for (int i=0; i<[rows count]; i++) {
                                                                
-                                                               char *update = "INSERT OR REPLACE INTO Clients "
+                                                               char *update = "INSERT INTO Clients "
                                                                "(clientID, clientName, clientAdr1, clientVille, clientProv, clientCodePostal, clientContact, clientTel1, clientTypeClntID, clientTitulaireID, clientTypeLivrID, clientTypeFact, clientLivrJourFixe) "
                                                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
                                                                
@@ -457,7 +457,7 @@ MDCAppDelegate *appDelegate;
     NSURLSessionConfiguration *defaultConfigObject = [NSURLSessionConfiguration defaultSessionConfiguration];
     NSURLSession *defaultSession = [NSURLSession sessionWithConfiguration: defaultConfigObject delegate: nil delegateQueue: [NSOperationQueue mainQueue]];
     
-    NSString *fullURL = @"http://www.nicolashuet.com/mdc/mobileSync/vinsJson.php";
+    NSString *fullURL = [NSString stringWithFormat:@"%@/mobileSync/vinsJson.php", appDelegate.syncServer];
     NSURL * url = [NSURL URLWithString:fullURL];
     NSMutableURLRequest * urlRequest = [NSMutableURLRequest requestWithURL:url];
     NSString * params = @"";
@@ -474,7 +474,7 @@ MDCAppDelegate *appDelegate;
                                                            
                                                            for (int i=0; i<[rows count]; i++) {
                                                                
-                                                               char *update = "INSERT OR REPLACE INTO Vins "
+                                                               char *update = "INSERT INTO Vins "
                                                                "(vinID, vinNumero, vinNom, vinCouleurID, vinEmpaq, vinRegionID, "
                                                                "vinNoDemande, vinIDFournisseur, vinDateAchat, vinQteAchat, vinTotalAssigned, "
                                                                "vinFormat, vinPrixAchat, vinFraisEtiq, vinFraisBout, vinFraisBoutPart, "
@@ -621,7 +621,7 @@ MDCAppDelegate *appDelegate;
     NSURLSessionConfiguration *defaultConfigObject = [NSURLSessionConfiguration defaultSessionConfiguration];
     NSURLSession *defaultSession = [NSURLSession sessionWithConfiguration: defaultConfigObject delegate: nil delegateQueue: [NSOperationQueue mainQueue]];
     
-    NSString *fullURL = [NSString stringWithFormat:@"http://www.nicolashuet.com/mdc/mobileSync/commRepJson.php?repID=%@",repID];
+    NSString *fullURL = [NSString stringWithFormat:@"%@/mobileSync/commRepJson.php?repID=%@", appDelegate.syncServer, repID];
     NSURL * url = [NSURL URLWithString:fullURL];
     NSMutableURLRequest * urlRequest = [NSMutableURLRequest requestWithURL:url];
     NSString * params = @"";
@@ -638,36 +638,36 @@ MDCAppDelegate *appDelegate;
                                                            
                                                            for (int i=0; i<[rows count]; i++) {
                                                                
-                                                               char *update = "INSERT OR REPLACE INTO Commandes "
+                                                               char *update = "INSERT INTO Commandes "
                                                                "(commID, commStatutID, commRepID, commIDSAQ, commClientID, commTypeClntID, commCommTypeLivrID, commDateFact, commDelaiPickup, commDatePickup, commClientJourLivr, commPartSuccID, commCommentaire, commLastUpdated) "
                                                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
                                                                
                                                                sqlite3_stmt *stmt;
                                                                
-                                                               NSInteger commID;
+                                                               int commID;
                                                                commID = [[[rows objectAtIndex:i] objectForKey:@"commID"]intValue];
                                                                
-                                                               int tmpCommID = commID;
+                                                               //int tmpCommID = commID;
                                                                
-                                                               NSString * tmpStrCommID = [NSString stringWithFormat:@"%i",tmpCommID];
-                                                               [self updateCommandeItemsTable:tmpStrCommID];
+                                                               //NSString * tmpStrCommID = [NSString stringWithFormat:@"%i",tmpCommID];
+                                                               //[self updateCommandeItemsTable:tmpStrCommID];
                                                                
-                                                               NSInteger commStatutID;
+                                                               int commStatutID;
                                                                commStatutID = [[[rows objectAtIndex:i] objectForKey:@"commStatutID"]intValue];
                                                                
-                                                               NSInteger commRepID;
+                                                               int commRepID;
                                                                commRepID = [[[rows objectAtIndex:i] objectForKey:@"commRepID"]intValue];
                                                                
                                                                NSString * commIDSAQ;
                                                                commIDSAQ = [[rows objectAtIndex:i] objectForKey:@"commIDSAQ"];
                                                                
-                                                               NSInteger commClientID;
+                                                               int commClientID;
                                                                commClientID = [[[rows objectAtIndex:i] objectForKey:@"commClientID"]intValue];
                                                                
-                                                               NSInteger commTypeClntID;
+                                                               int commTypeClntID;
                                                                commTypeClntID = [[[rows objectAtIndex:i] objectForKey:@"commTypeClntID"]intValue];
                                                                
-                                                               NSInteger commCommTypeLivrID;
+                                                               int commCommTypeLivrID;
                                                                commCommTypeLivrID = [[[rows objectAtIndex:i] objectForKey:@"commCommTypeLivrID"]intValue];
                                                             
                                                                NSString * commDateFact;
@@ -684,6 +684,7 @@ MDCAppDelegate *appDelegate;
                                                                
                                                                NSString * commPartSuccID;
                                                                commPartSuccID = [[rows objectAtIndex:i] objectForKey:@"commPartSuccID"];
+                                                               int intCommPartSuccID = [commPartSuccID intValue];
                                                                
                                                                NSString * commCommentaire;
                                                                commCommentaire = [[rows objectAtIndex:i] objectForKey:@"commCommentaire"];
@@ -704,7 +705,7 @@ MDCAppDelegate *appDelegate;
                                                                    sqlite3_bind_text(stmt, 9, [commDelaiPickup UTF8String], -1, NULL);
                                                                    sqlite3_bind_text(stmt, 10, [commDatePickup UTF8String], -1, NULL);
                                                                    sqlite3_bind_text(stmt, 11, [commClientJourLivr UTF8String], -1, NULL);
-                                                                   sqlite3_bind_int(stmt, 12, commPartSuccID);
+                                                                   sqlite3_bind_int(stmt, 12, intCommPartSuccID);
                                                                    sqlite3_bind_text(stmt, 13, [commCommentaire UTF8String], -1, NULL);
                                                                    sqlite3_bind_text(stmt, 14, [commLastUpdated UTF8String], -1, NULL);
                                                                    
@@ -747,10 +748,8 @@ MDCAppDelegate *appDelegate;
     [dataTask resume];
 }
 
-- (void) updateCommandeItemsTable:(NSString *)commID {
+- (void) updateCommandeItemsTable {
     char *errorMsg = nil;
-    
-    NSLog(@"Start updating CommandeItems for commande ID: %@",commID);
     
     if (sqlite3_open([[self dataFilePath] UTF8String], &database)
         != SQLITE_OK) {
@@ -761,7 +760,7 @@ MDCAppDelegate *appDelegate;
     NSURLSessionConfiguration *defaultConfigObject = [NSURLSessionConfiguration defaultSessionConfiguration];
     NSURLSession *defaultSession = [NSURLSession sessionWithConfiguration: defaultConfigObject delegate: nil delegateQueue: [NSOperationQueue mainQueue]];
     
-    NSString *fullURL = [NSString stringWithFormat:@"http://www.nicolashuet.com/mdc/mobileSync/commItemJson.php?commID=%@",commID];
+    NSString *fullURL = [NSString stringWithFormat:@"%@/mobileSync/commItemJsonForRep.php?commID=%@", appDelegate.syncServer, appDelegate.currLoggedUser];
     NSURL * url = [NSURL URLWithString:fullURL];
     NSMutableURLRequest * urlRequest = [NSMutableURLRequest requestWithURL:url];
     NSString * params = @"";
@@ -780,23 +779,23 @@ MDCAppDelegate *appDelegate;
                                                                
                                                                //(commItemID INT PRIMARY KEY, commItemCommID INT, commItemVinID INT, commItemVinQte INT)
                                                                
-                                                               char *update = "INSERT OR REPLACE INTO CommandeItems "
+                                                               char *update = "INSERT INTO CommandeItems "
                                                                "(commItemID, commItemCommID, commItemVinID, commItemVinQte) "
                                                                "VALUES (?, ?, ?, ?);";
                                                                
                                                                sqlite3_stmt *stmt;
                                                                
                                                                //{"commItemID":13,"commItemCommID":7,"vinID":391,"vinQte":24}
-                                                               NSInteger commItemID;
+                                                               int commItemID;
                                                                commItemID = [[[rows objectAtIndex:i] objectForKey:@"commItemID"]intValue];
                                                                
-                                                               NSInteger commItemCommID;
+                                                               int commItemCommID;
                                                                commItemCommID = [[[rows objectAtIndex:i] objectForKey:@"commItemCommID"]intValue];
                                                                
-                                                               NSInteger commItemVinID;
+                                                               int commItemVinID;
                                                                commItemVinID = [[[rows objectAtIndex:i] objectForKey:@"commItemVinID"]intValue];
                                                                
-                                                               NSInteger commItemVinQte;
+                                                               int commItemVinQte;
                                                                commItemVinQte = [[[rows objectAtIndex:i] objectForKey:@"commItemVinQte"]intValue];
                                                                
                                                                if (sqlite3_prepare_v2(database, update, -1, &stmt, nil)

@@ -1,9 +1,9 @@
 //
-//  BIDCartViewController.h
-//  AssistantVente
+//  BIDReservationCartVC.h
+//  mdcApp
 //
-//  Created by Nicolas Huet on 04/02/14.
-//  Copyright (c) 2014 Present. All rights reserved.
+//  Created by Nicolas Huet on 2015-05-24.
+//  Copyright (c) 2015 MaitreDeChai. All rights reserved.
 //
 
 #import <UIKit/UIKit.h>
@@ -16,7 +16,8 @@
 #import "OrderItem.h"
 #import <sqlite3.h>
 
-@interface BIDCartViewController : UITableViewController <UIActionSheetDelegate, UITextFieldDelegate>
+
+@interface BIDReservationCartVC : UITableViewController <UIActionSheetDelegate, UITextFieldDelegate>
 
 @property (nonatomic, assign) BOOL returningDocument;
 
@@ -47,5 +48,6 @@
 - (IBAction)confirmTransaction:(id)sender;
 
 - (IBAction)cancelTransaction:(id)sender;
+
 
 @end

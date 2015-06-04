@@ -11,6 +11,7 @@
 #import "PRELocalDBTools.h"
 #import "Client.h"
 #import "Order.h"
+#import "BIDCartViewController.h"
 
 @interface MDCClientDetailsTableViewController : UITableViewController
 

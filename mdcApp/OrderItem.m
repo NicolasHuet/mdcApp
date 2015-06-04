@@ -13,5 +13,6 @@
 @synthesize vinID;
 @synthesize vinQte;
 @synthesize vinOverideFrais;
+@synthesize localOrderID;
 
 @end

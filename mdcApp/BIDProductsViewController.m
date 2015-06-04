@@ -43,7 +43,7 @@ sqlite3 *database;
     
     int numberOfRows = 0;
     
-    self.tableView.rowHeight = 130;
+    self.tableView.rowHeight = 90;
     self.clearsSelectionOnViewWillAppear = NO;
     
     if (sqlite3_open([[self dataFilePath] UTF8String], &database)
@@ -52,7 +52,8 @@ sqlite3 *database;
         NSAssert(0, @"Failed to open database");
     }
     
-    NSString *query = [NSString stringWithFormat:@"SELECT * FROM Vins WHERE vinDisponible = 1"];
+    //NSString *query = [NSString stringWithFormat:@"SELECT * FROM Vins WHERE vinDisponible = 1 AND vinEpuise = 0 ORDER BY vinNom"];
+    NSString *query = [NSString stringWithFormat:@"SELECT * FROM Vins WHERE vinEpuise = 0 ORDER BY vinNom"];
     
     sqlite3_stmt *statement;
     if (sqlite3_prepare_v2(database, [query UTF8String],
@@ -211,11 +212,15 @@ sqlite3 *database;
 
 -(void) viewWillAppear:(BOOL)animated {
     
+    [super viewWillAppear:YES];
+    [[self tableView] reloadData];
+    
+    /*
     self.productArray = [[NSMutableArray alloc] init];
     
     int numberOfRows = 0;
     
-    self.tableView.rowHeight = 130;
+    self.tableView.rowHeight = 90;
     self.clearsSelectionOnViewWillAppear = NO;
     
     if (sqlite3_open([[self dataFilePath] UTF8String], &database)
@@ -224,7 +229,8 @@ sqlite3 *database;
         NSAssert(0, @"Failed to open database");
     }
     
-    NSString *query = [NSString stringWithFormat:@"SELECT * FROM Vins WHERE vinDisponible = 1"];
+    //NSString *query = [NSString stringWithFormat:@"SELECT * FROM Vins WHERE vinDisponible = 1 AND vinEpuise = 0 ORDER BY vinNom"];
+    NSString *query = [NSString stringWithFormat:@"SELECT * FROM Vins WHERE vinEpuise = 0 ORDER BY vinNom"];
     
     sqlite3_stmt *statement;
     if (sqlite3_prepare_v2(database, [query UTF8String],
@@ -256,27 +262,27 @@ sqlite3 *database;
             int vinEpuise;
             int vinDisponible;
             
-            /*
-             1- vinID INT PRIMARY KEY,
-             2- vinNumero TEXT,
-             3- vinNom TEXT,
-             4- vinCouleurID INT,
-             5- vinEmpaq INT,
-             6- vinRegionID INT,
-             7- vinNoDemande TEXT,
-             8- vinIDFournisseur TEXT,
-             9- vinDateAchat TEXT,
-             10- vinQteAchat INT,
-             11- vinTotalAssigned INT,
-             12- vinFormat TEXT,
-             13- vinPrixAchat REAL,
-             14- vinFraisEtiq REAL,
-             15- vinFraisBout REAL,
-             16- vinFraisBoutPart REAL,
-             17- vinPrixVente REAL,
-             18- vinEpuise INT,
-             19- vinDisponible INT
-             */
+            //
+             //1- vinID INT PRIMARY KEY,
+             //2- vinNumero TEXT,
+             //3- vinNom TEXT,
+             //4- vinCouleurID INT,
+             //5- vinEmpaq INT,
+             //6- vinRegionID INT,
+             //7- vinNoDemande TEXT,
+             //8- vinIDFournisseur TEXT,
+             //9- vinDateAchat TEXT,
+             //10- vinQteAchat INT,
+             //11- vinTotalAssigned INT,
+             //12- vinFormat TEXT,
+             //13- vinPrixAchat REAL,
+             //14- vinFraisEtiq REAL,
+             //15- vinFraisBout REAL,
+             //16- vinFraisBoutPart REAL,
+             //17- vinPrixVente REAL,
+             //18- vinEpuise INT,
+             //19- vinDisponible INT
+             //
             
             columnIntValue = (int)sqlite3_column_int(statement, 0);
             vinID = columnIntValue;
@@ -378,6 +384,7 @@ sqlite3 *database;
     
     // Reload the table
     [[self tableView] reloadData];
+    */
     
 }
 
@@ -474,18 +481,35 @@ sqlite3 *database;
     UILabel *productNameLabel = (UILabel *)[cell viewWithTag:101];
     productNameLabel.text = product.vinNom;
         
-    /*
-    UILabel *productRegionLabel = (UILabel *)[cell viewWithTag:102];
-    productRegionLabel.text = product.region;
-        
-    UILabel *productCountryLabel = (UILabel *)[cell viewWithTag:103];
-    productCountryLabel.text = product.pays;
-    */
-        
     double tmpCalc = [product.vinPrixAchat doubleValue] + [product.vinFraisEtiq doubleValue] + [product.vinFraisBout doubleValue];
         
-    UILabel *productQtyLabel = (UILabel *)[cell viewWithTag:104];
-    productQtyLabel.text = [NSString stringWithFormat:@"$ %.2f", tmpCalc];
+    UILabel *productPriceLabel = (UILabel *)[cell viewWithTag:104];
+    productPriceLabel.text = [NSString stringWithFormat:@"$ %.2f", tmpCalc];
+    
+    UILabel *productAvailDays = (UILabel *)[cell viewWithTag:111];
+    if(([product.vinDateAchat  isEqual:@""]) || ([product.vinDateAchat  isEqual:@"0000-00-00"])){
+        productAvailDays.text = @"N/A";
+    } else {
+        NSDateFormatter *df=[[NSDateFormatter alloc] init];
+        [df setDateFormat:@"yyyy-MM-dd"];
+        NSDate *date1 = [df dateFromString:product.vinDateAchat];
+        NSDate *date2 = [NSDate date];
+        NSTimeInterval secondsBetween = [date2 timeIntervalSinceDate:date1];
+        int numberOfDays = secondsBetween / 86400;
+        productAvailDays.text = [NSString stringWithFormat:@"%i", numberOfDays];
+    }
+    
+    
+    int tmpInitialStock = [product.vinQteAchat intValue];
+    int tmpAssigned = [product.vinTotalAssigned intValue];
+    int tmpStock = tmpInitialStock - tmpAssigned;
+    
+    UILabel *productStockLabel = (UILabel *)[cell viewWithTag:110];
+    productStockLabel.text = [NSString stringWithFormat:@"%i",tmpStock];
+    
+    //if ([product.vinDisponible isEqual:@"0"]){
+        //cell.backgroundColor = [UIColor lightGrayColor];
+    //}
         
     return cell;
 }
@@ -504,9 +528,10 @@ sqlite3 *database;
 -(BOOL)searchDisplayController:(UISearchDisplayController *)controller shouldReloadTableForSearchString:(NSString *)searchString {
     // Tells the table data source to reload when text changes
     [self filterContentForSearchText:searchString scope:
-     [[self.searchDisplayController.searchBar scopeButtonTitles] objectAtIndex:[self.searchDisplayController.searchBar selectedScopeButtonIndex]]];
+    [[self.searchDisplayController.searchBar scopeButtonTitles] objectAtIndex:[self.searchDisplayController.searchBar selectedScopeButtonIndex]]];
     // Return YES to cause the search result table view to be reloaded.
     return YES;
+    
 }
 
 -(BOOL)searchDisplayController:(UISearchDisplayController *)controller shouldReloadTableForSearchScope:(NSInteger)searchOption {
@@ -519,7 +544,7 @@ sqlite3 *database;
 
 - (void)searchDisplayController:(UISearchDisplayController *)controller didLoadSearchResultsTableView:(UITableView *)tableView
 {
-    tableView.rowHeight = 130; // or some other height
+    tableView.rowHeight = 90; // or some other height
     
     //self.tableView.rowHeight = 71;
 }

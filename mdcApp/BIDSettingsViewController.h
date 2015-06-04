@@ -13,7 +13,7 @@
 #import "OrderItem.h"
 #import "MDCAppDelegate.h"
 
-@interface BIDSettingsViewController : UIViewController
+@interface BIDSettingsViewController : UIViewController <UIActionSheetDelegate>
 
 @property (strong, nonatomic) IBOutlet UIButton *instanciate;
 @property (nonatomic, strong) NSMutableArray *orderArray;
@@ -24,5 +24,7 @@
 - (IBAction)ordersSync:(id)sender;
 
 - (IBAction)fullSyncCheck:(id)sender;
+
+@property (strong, nonatomic) IBOutlet UILabel *versionLabelCheck;
 
 @end

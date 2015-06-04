@@ -17,5 +17,6 @@
 @property (strong,nonatomic) NSMutableArray *filteredClientArray;
 //@property (strong, nonatomic) IBOutlet UISearchBar *clientSearchBar;
 @property (strong, nonatomic) IBOutlet UISearchBar *clientSearchBar;
+@property (strong,nonatomic) NSString *pickupSource;
 
 @end

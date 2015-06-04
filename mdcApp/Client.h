@@ -21,6 +21,8 @@
 @property (nonatomic, strong) NSString *province;
 @property (nonatomic, strong) NSString *postalcode;
 
+@property (nonatomic, strong) NSString *clientIDSAQ;
+
 @property (nonatomic, strong) NSString *clientTypeLivr;
 @property (nonatomic, strong) NSString *clientTypeFact;
 @property (nonatomic, strong) NSString *clientJourLivr;

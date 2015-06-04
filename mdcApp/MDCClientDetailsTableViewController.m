@@ -13,6 +13,7 @@
 @synthesize orderArray;
 
 sqlite3 *database;
+Order *currentOrder;
 
 - (NSString *)dataFilePath
 {
@@ -89,17 +90,22 @@ sqlite3 *database;
             columnIntValue = (int)sqlite3_column_int(statement, 2);
             commRepID = [NSString stringWithFormat:@"%i",columnIntValue];
             
+            columnData = (char *) sqlite3_column_text(statement, 3);
+            commIDSAQ = [[NSString alloc] initWithUTF8String:columnData];
+            
             columnIntValue = (int)sqlite3_column_int(statement, 4);
             commClientID = [NSString stringWithFormat:@"%i",columnIntValue];
             
             columnData = (char *)sqlite3_column_text(statement, 7);
             commDateFact = [[NSString alloc] initWithUTF8String:columnData];
+
             
             Order *orderToAdd = [[Order alloc] init];
             orderToAdd.commID = commID;
             orderToAdd.commStatutID = commStatutID;
             orderToAdd.commRepID = commRepID;
             orderToAdd.commClientID = commClientID;
+            orderToAdd.commIDSAQ = commIDSAQ;
             orderToAdd.commDateFact = commDateFact;
             
             [orderArray addObject:orderToAdd];
@@ -207,6 +213,11 @@ sqlite3 *database;
         
         UILabel *clientJourLivr = (UILabel *)[cell viewWithTag:113];
         clientJourLivr.text = client.clientJourLivr;
+        
+        UILabel *clientIDSAQ = (UILabel *)[cell viewWithTag:115];
+        clientIDSAQ.text = client.clientIDSAQ;
+        
+        
     }
     
     if([indexPath section] == 1){
@@ -250,9 +261,11 @@ sqlite3 *database;
                                -1, &statement, nil) == SQLITE_OK)
         {
             char *columnData;
-            int columnIntValue;
+            //int columnIntValue;
             NSString * clientID;
             NSString * clientName;
+            NSString * clientIDSAQ;
+            
             while (sqlite3_step(statement) == SQLITE_ROW) {
      
                  //1-clientID INT PRIMARY KEY,
@@ -266,6 +279,7 @@ sqlite3 *database;
                  //9-clientContact TEXT,
                  //10-clientEmail TEXT,
                  //11-clientTel1 TEXT,
+                 //20-clientIDSAQ TEXT
      
                 columnData = (char *)sqlite3_column_text(statement, 0);
                 clientID = [[NSString alloc] initWithUTF8String:columnData];
@@ -273,12 +287,18 @@ sqlite3 *database;
                 columnData = (char *)sqlite3_column_text(statement, 1);
                 clientName = [[NSString alloc] initWithUTF8String:columnData];
                 
+                columnData = (char *)sqlite3_column_text(statement, 19);
+                clientIDSAQ = [[NSString alloc] initWithUTF8String:columnData];
+                
             }
             UILabel *clientNameLabel = (UILabel *)[cell viewWithTag:131];
             clientNameLabel.text = clientName;
             
         }
         sqlite3_finalize(statement);
+        
+        UILabel *commIDLabel = (UILabel *)[cell viewWithTag:135];
+        commIDLabel.text = order.commID;
         
         UILabel *commDateFactLabel = (UILabel *)[cell viewWithTag:133];
         if([order.commDateFact  isEqual: @"0000-00-00"]){
@@ -293,40 +313,50 @@ sqlite3 *database;
         } else if([order.commStatutID  isEqual: @"2"]){
             commStatut.text = @"Révision";
         } else if([order.commStatutID  isEqual: @"3"]){
-            commStatut.text = @"Soumis";
+            commStatut.text = @"Soumis SAQ";
         } else if([order.commStatutID  isEqual: @"4"]){
-            commStatut.text = @"Confirmé";
-        } else if([order.commStatutID  isEqual: @"2"]){
+            commStatut.text = @"Confirmé SAQ";
+        } else if([order.commStatutID  isEqual: @"5"]){
             commStatut.text = @"Complet";
+        } else if([order.commStatutID  isEqual: @"6"]){
+            commStatut.text = @"Réservation";
+        } else if([order.commStatutID  isEqual: @"7"]){
+            commStatut.text = @"Confirmé";
+        } else if([order.commStatutID  isEqual: @"8"]){
+            commStatut.text = @"Facturé";
+        } else if([order.commStatutID  isEqual: @"9"]){
+            commStatut.text = @"Post Daté";
+        } else if([order.commStatutID  isEqual: @"10"]){
+            commStatut.text = @"Terminé";
         } else {
             commStatut.text = @"";
         }
         
-        query = [NSString stringWithFormat:@"SELECT COUNT(*) as itemCount FROM CommandeItems WHERE commItemCommID = %@",order.commID];
         
         if (sqlite3_prepare_v2(database, [query UTF8String],
                                -1, &statement, nil) == SQLITE_OK)
         {
-            char *columnData;
+            //char *columnData;
             int columnIntValue;
             NSString * itemCount;
             while (sqlite3_step(statement) == SQLITE_ROW) {
                 
-                 //1-clientID INT PRIMARY KEY,
-                 //2-clientName TEXT,
-                 //3-clientAdr1 TEXT,
-                 //4-clientAdr2 TEXT,
-                 //5-clientVille TEXT,
-                 //6-clientProv TEXT,
-                 //7-clientCodePostal TEXT,
-                 //8-clientTelComp TEXT,
-                 //9-clientContact TEXT,
-                 //10-clientEmail TEXT,
-                 //11-clientTel1 TEXT,
-     
+                /*
+                 1-clientID INT PRIMARY KEY,
+                 2-clientName TEXT,
+                 3-clientAdr1 TEXT,
+                 4-clientAdr2 TEXT,
+                 5-clientVille TEXT,
+                 6-clientProv TEXT,
+                 7-clientCodePostal TEXT,
+                 8-clientTelComp TEXT,
+                 9-clientContact TEXT,
+                 10-clientEmail TEXT,
+                 11-clientTel1 TEXT,
+                 */
                 
                 columnIntValue = (int)sqlite3_column_int(statement, 0);
-                NSLog(@"columnValue (Count) %i",columnIntValue);
+                //NSLog(@"columnValue (Count) %i",columnIntValue);
                 itemCount = [NSString stringWithFormat:@"%i",columnIntValue];
                 
             }
@@ -349,6 +379,29 @@ sqlite3 *database;
             return 33.0; // second section  is 33pt high
         default:
             return 80.0; // all other rows are 40pt high
+    }
+}
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    
+    currentOrder = [orderArray objectAtIndex:indexPath.row];
+    
+    [self performSegueWithIdentifier: @"reviewOrderFromClient" sender: self];
+    
+    
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+}
+
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender
+{
+    // Make sure your segue name in storyboard is the same as this line
+    if ([[segue identifier] isEqualToString:@"reviewOrderFromClient"])
+    {
+        // Get reference to the destination view controller
+        BIDCartViewController *vc = [segue destinationViewController];
+        
+        // Pass any objects to the view controller here, like...
+        vc.selectedOrder = currentOrder;
     }
 }
 

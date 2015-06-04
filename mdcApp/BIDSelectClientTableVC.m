@@ -15,6 +15,7 @@
 @synthesize clientArray;
 @synthesize filteredClientArray;
 @synthesize clientSearchBar;
+@synthesize pickupSource;
 
 MDCAppDelegate *appDelegate;
 sqlite3 *database;
@@ -171,7 +172,7 @@ sqlite3 *database;
     
     appDelegate = [[UIApplication sharedApplication] delegate];
     
-    [self.tableView setSeparatorStyle:UITableViewCellSeparatorStyleNone];
+    //[self.tableView setSeparatorStyle:UITableViewCellSeparatorStyleNone];
     
     self.tableView.rowHeight = 120;
     self.clearsSelectionOnViewWillAppear = NO;
@@ -317,7 +318,7 @@ sqlite3 *database;
     
     appDelegate = [[UIApplication sharedApplication] delegate];
     
-    [self.tableView setSeparatorStyle:UITableViewCellSeparatorStyleNone];
+    //[self.tableView setSeparatorStyle:UITableViewCellSeparatorStyleNone];
     
     self.tableView.rowHeight = 120;
     self.clearsSelectionOnViewWillAppear = NO;
@@ -414,10 +415,6 @@ sqlite3 *database;
     UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
     if ([cell.reuseIdentifier isEqualToString:CellIdentifier])
     {
-        //[self performSegueWithIdentifier:@"backToOrder" sender:cell];
-        //[self dismissViewControllerAnimated:NO completion:nil];
-        //[self.navigationController popToRootViewControllerAnimated:YES];
-        
         Client *client = nil;
         
         if (self.searchDisplayController.isActive)
@@ -430,9 +427,13 @@ sqlite3 *database;
             //NSIndexPath *indexPath = [self.tableView indexPathForCell:sender];
             client = [clientArray objectAtIndex:indexPath.row];
         }
-        //MDCClientDetailsTableViewController *clientDetailsViewController = segue.destinationViewController;
-        //clientDetailsViewController.client = client;
-        appDelegate.sessionActiveClient = client;
+        
+        if([self.pickupSource isEqual: @"Commande"]){
+            appDelegate.sessionActiveClient = client;
+        } else {
+            appDelegate.reservationActiveClient = client;
+        }
+        
         [self.navigationController popViewControllerAnimated:YES];
     }
     
@@ -455,9 +456,12 @@ sqlite3 *database;
             NSIndexPath *indexPath = [self.tableView indexPathForCell:sender];
             client = [clientArray objectAtIndex:indexPath.row];
         }
-        //MDCClientDetailsTableViewController *clientDetailsViewController = segue.destinationViewController;
-        //clientDetailsViewController.client = client;
-        appDelegate.sessionActiveClient = client;
+        
+        if([self.pickupSource isEqual: @"Commande"]){
+            appDelegate.sessionActiveClient = client;
+        } else {
+            appDelegate.reservationActiveClient = client;
+        }
     }
 }
 
@@ -493,92 +497,5 @@ sqlite3 *database;
 {
     tableView.rowHeight = 120; // or some other height
 }
-
-/*
- - (IBAction)done:(UIStoryboardSegue *)segue
- {
- BIDAddClientVC *addClientVC = segue.sourceViewController;
- Client *newClient = [[Client alloc] init];
- newClient = addClientVC.clientToAdd;
- [self.clientArray addObject:newClient];
- 
- [self.tableView reloadData];
- }
- 
- - (IBAction)cancel:(UIStoryboardSegue *)segue
- {
- [self.tableView reloadData];
- }
- */
-
-/*
- - (UIImage *)cellBackgroundForRowAtIndexPath:(NSIndexPath *)indexPath
- {
- NSInteger rowCount = [self tableView:[self tableView] numberOfRowsInSection:0];
- NSInteger rowIndex = indexPath.row;
- UIImage *background = nil;
- 
- if (rowIndex == 0) {
- background = [UIImage imageNamed:@"cell_top.png"];
- } else if (rowIndex == rowCount - 1) {
- background = [UIImage imageNamed:@"cell_bottom.png"];
- } else {
- background = [UIImage imageNamed:@"cell_middle.png"];
- }
- 
- return background;
- }
- */
-
-/*
- // Override to support conditional editing of the table view.
- - (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath
- {
- // Return NO if you do not want the specified item to be editable.
- return YES;
- }
- */
-
-/*
- // Override to support editing the table view.
- - (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath
- {
- if (editingStyle == UITableViewCellEditingStyleDelete) {
- // Delete the row from the data source
- [tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationFade];
- }
- else if (editingStyle == UITableViewCellEditingStyleInsert) {
- // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
- }
- }
- */
-
-/*
- // Override to support rearranging the table view.
- - (void)tableView:(UITableView *)tableView moveRowAtIndexPath:(NSIndexPath *)fromIndexPath toIndexPath:(NSIndexPath *)toIndexPath
- {
- }
- */
-
-/*
- // Override to support conditional rearranging of the table view.
- - (BOOL)tableView:(UITableView *)tableView canMoveRowAtIndexPath:(NSIndexPath *)indexPath
- {
- // Return NO if you do not want the item to be re-orderable.
- return YES;
- }
- */
-
-/*
- #pragma mark - Navigation
- 
- // In a story board-based application, you will often want to do a little preparation before navigation
- - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender
- {
- // Get the new view controller using [segue destinationViewController].
- // Pass the selected object to the new view controller.
- }
- 
- */
 
 @end

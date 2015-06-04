@@ -1,16 +1,12 @@
 //
-//  BIDCartViewController.m
-//  AssistantVente
+//  BIDReservationCartVC.m
+//  mdcApp
 //
-//  Created by Nicolas Huet on 04/02/14.
-//  Copyright (c) 2014 Present. All rights reserved.
+//  Created by Nicolas Huet on 2015-05-24.
+//  Copyright (c) 2015 MaitreDeChai. All rights reserved.
 //
 
-#import "BIDCartViewController.h"
-
-@interface BIDCartViewController ()
-
-@end
+#import "BIDReservationCartVC.h"
 
 NSMutableArray *itemImageFiles;
 NSMutableArray *itemDetails;
@@ -32,7 +28,7 @@ sqlite3 *database;
 double varSubTotal;
 double varTotal;
 
-@implementation BIDCartViewController
+@implementation BIDReservationCartVC
 
 - (id)initWithStyle:(UITableViewStyle)style
 {
@@ -43,52 +39,22 @@ double varTotal;
     return self;
 }
 
-- (void)textFieldDidBeginEditing:(UITextField *)textField {
-    if(textField.tag == 200){
-        self.commDatePickup = (UITextField *)textField;
-    } else if(textField.tag == 201){
-        self.commCommentaire = (UITextField *)textField;
-    }
-}
 
 - (void)cancelCommentairePad {
-        appDelegate.cartCommentaire = @"";
-        self.commCommentaire.text = @"";
-        [self.commCommentaire resignFirstResponder];
-}
-
-- (void)doneWithCommentairePad {
-    appDelegate.cartCommentaire = self.commCommentaire.text;
+    appDelegate.reservCommentaire = @"";
+    self.commCommentaire.text = @"";
     [self.commCommentaire resignFirstResponder];
 }
 
-- (void)datePickerValueChanged:(UIDatePicker*) datePicker{
-    NSDateFormatter *df = [[NSDateFormatter alloc] init];
-    [df setDateFormat:@"yyyy-MM-dd"];
-    self.commDatePickup.text = [NSString stringWithFormat:@"%@",[df stringFromDate:datePicker.date]];
-}
-
-- (BOOL)textFieldShouldReturn:(UITextField *)textField
-{
-    NSDateFormatter *df = [[NSDateFormatter alloc] init];
-    [df setDateFormat:@"yyyy-MM-dd"];
-    self.commDatePickup.text = [NSString stringWithFormat:@"%@",[df stringFromDate:self.datePicker.date]];
-    appDelegate.cartDateLivr = self.commDatePickup.text;
-    [self.commDatePickup resignFirstResponder];
-    
-    return YES;
+- (void)doneWithCommentairePad {
+    appDelegate.reservCommentaire = self.commCommentaire.text;
+    [self.commCommentaire resignFirstResponder];
 }
 
 
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-    
-    if (sqlite3_open([[self dataFilePath] UTF8String], &database)
-        != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Failed to open database");
-    }
     
     self.navigationItem.hidesBackButton = YES;
     
@@ -105,26 +71,11 @@ double varTotal;
     
     appDelegate = [[UIApplication sharedApplication] delegate];
     
-    appDelegate.cartTypeLivr = @"2";
     
     
     if(self.selectedOrder != nil) {
         
-        if([self.selectedOrder.commTypeLivrID isEqual: @"1"]) {
-            if([self.selectedOrder.commDelaiPickup isEqual: @"24"]){
-                appDelegate.cartTypeLivr = @"1a";
-            } else {
-                appDelegate.cartTypeLivr = @"1b";
-            }
-        } else {
-            appDelegate.cartTypeLivr = @"2";
-        }
-        //appDelegate.cartTypeLivr = self.selectedOrder.commTypeLivrID;
-        appDelegate.cartDelaiPickup = self.selectedOrder.commDelaiPickup;
-        appDelegate.cartDateLivr = self.selectedOrder.commDatePickup;
-        appDelegate.cartCommentaire = self.selectedOrder.commCommentaire;
-        
-        //appDelegate.cartProducts;
+        appDelegate.reservCommentaire = self.selectedOrder.commCommentaire;
         
         NSString *query;
         
@@ -228,17 +179,16 @@ double varTotal;
                 clientToAdd.province = clientProv;
                 clientToAdd.postalcode = clientCodePostal;
                 
-                appDelegate.sessionActiveClient = clientToAdd;
+                appDelegate.reservationActiveClient = clientToAdd;
                 
             }
             sqlite3_finalize(statement);
-            
         }
         
         if([self.selectedOrder.commDataSource  isEqual: @"local"]) {
-            query = [NSString stringWithFormat:@"SELECT * FROM LocalCommandeItems WHERE commItemCommID = %@",self.selectedOrder.commID];
+            query = [NSString stringWithFormat:@"SELECT * FROM LocalReservationItems WHERE commItemCommID = %@",self.selectedOrder.commID];
         } else {
-            query = [NSString stringWithFormat:@"SELECT * FROM CommandeItems WHERE commItemCommID = %@",self.selectedOrder.commID];
+            query = [NSString stringWithFormat:@"SELECT * FROM ReservationItems WHERE commItemCommID = %@",self.selectedOrder.commID];
         }
         
         NSMutableArray *orderItemsArray = [[NSMutableArray alloc] init];
@@ -275,7 +225,7 @@ double varTotal;
                 orderItemToAdd.vinID = vinID;
                 orderItemToAdd.vinQte = vinQte;
                 orderItemToAdd.vinOverideFrais = @"0.00";
-
+                
                 [orderItemsArray addObject:orderItemToAdd];
                 
             }
@@ -439,26 +389,24 @@ double varTotal;
             }
         }
         
-        
-        appDelegate.cartProducts = orderProductsArray;
-        appDelegate.cartQties = orderQtiesArray;
+        appDelegate.reservProducts = orderProductsArray;
+        appDelegate.reservQties = orderQtiesArray;
         
         
     }
     
-    productList = appDelegate.cartProducts;
-    currentClient = appDelegate.sessionActiveClient;
-    currentTypeLivr = appDelegate.cartTypeLivr;
-    currentDelaiPickup = appDelegate.cartDelaiPickup;
-    currentCommentaire = appDelegate.cartCommentaire;
+    productList = appDelegate.reservProducts;
+    currentClient = appDelegate.reservationActiveClient;
+    currentTypeLivr = appDelegate.reservTypeLivr;
+    currentCommentaire = appDelegate.reservCommentaire;
     
     //I am really trying something here NH
     NSInteger arraySize = [productList count];
     
     for(int i = 0; i < arraySize; i++){
         Product *currProduct = nil;
-        currProduct = [appDelegate.cartProducts objectAtIndex:i];
-        NSString *currQty = [appDelegate.cartQties objectAtIndex:i];
+        currProduct = [appDelegate.reservProducts objectAtIndex:i];
+        NSString *currQty = [appDelegate.reservQties objectAtIndex:i];
         
         if([currProduct.vinCouleurID  isEqual: @"3" ]){
             [itemImageFiles addObject:@"wineRose(128)"];
@@ -482,7 +430,7 @@ double varTotal;
         
         [itemPrixUnitaire addObject:[NSString stringWithFormat:@"%.2f", tmpCalc]];
         
-        double qtyTmp = [[appDelegate.cartQties objectAtIndex:i] doubleValue];
+        double qtyTmp = [[appDelegate.reservQties objectAtIndex:i] doubleValue];
         double unitPriceTmp = tmpCalc;
         double subTotalTmp = qtyTmp * unitPriceTmp;
         
@@ -494,10 +442,8 @@ double varTotal;
         
     }
     //NSLog(@"Testing...");
-    
-    sqlite3_close(database);
     [[self tableView] reloadData];
-
+    
     
 }
 
@@ -519,18 +465,17 @@ double varTotal;
     itemPrixUnitaire = [[NSMutableArray array] init];
     
     MDCAppDelegate *appDelegate = [[UIApplication sharedApplication] delegate];
-    NSMutableArray *productList = appDelegate.cartProducts;
-    currentClient = appDelegate.sessionActiveClient;
-    currentTypeLivr = appDelegate.cartTypeLivr;
-    currentDelaiPickup = appDelegate.cartDelaiPickup;
-    currentCommentaire = appDelegate.cartCommentaire;
+    NSMutableArray *productList = appDelegate.reservProducts;
+    currentClient = appDelegate.reservationActiveClient;
+    currentTypeLivr = appDelegate.reservTypeLivr;
+    currentCommentaire = appDelegate.reservCommentaire;
     
     NSUInteger arraySize = [productList count];
     
     for(int i = 0; i < arraySize; i++){
         Product *currProduct = nil;
-        currProduct = [appDelegate.cartProducts objectAtIndex:i];
-        NSString *currQty = [appDelegate.cartQties objectAtIndex:i];
+        currProduct = [appDelegate.reservProducts objectAtIndex:i];
+        NSString *currQty = [appDelegate.reservQties objectAtIndex:i];
         
         if([currProduct.vinCouleurID  isEqual: @"3" ]){
             [itemImageFiles addObject:@"wineRose(128)"];
@@ -553,7 +498,7 @@ double varTotal;
         
         [itemPrixUnitaire addObject:[NSString stringWithFormat:@"%.2f", tmpCalc]];
         
-        double qtyTmp = [[appDelegate.cartQties objectAtIndex:i] doubleValue];
+        double qtyTmp = [[appDelegate.reservQties objectAtIndex:i] doubleValue];
         double unitPriceTmp = tmpCalc;
         double subTotalTmp = qtyTmp * unitPriceTmp;
         
@@ -649,72 +594,17 @@ double varTotal;
             cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:CellIdentifier];
         }
         
-        if((self.selectedOrder != nil) && (![self.selectedOrder.commStatutID isEqual: @"1"])) {
-            UIButton *addProductButton = (UIButton *)[cell viewWithTag:600];
-            addProductButton.hidden = YES;
-            UIButton *submitDraftButton = (UIButton *)[cell viewWithTag:603];
-            submitDraftButton.hidden = YES;
-            UIButton *submitOrderButton = (UIButton *)[cell viewWithTag:602];
-            submitOrderButton.hidden = YES;
-            
-            UITextField *commDatePickup = (UITextField *)[cell viewWithTag:200];
-            commDatePickup.text = appDelegate.cartDateLivr;
-            commDatePickup.enabled = NO;
-            UITextField *commCommentaire = (UITextField *)[cell viewWithTag:201];
-            commCommentaire.text = appDelegate.cartCommentaire;
-            commCommentaire.enabled = NO;
-            
-            UILabel *commIDSAQLbl = (UILabel *)[cell viewWithTag:204];
-            commIDSAQLbl.hidden = NO;
-            UILabel *commIDSAQ = (UILabel *)[cell viewWithTag:205];
-            commIDSAQ.text = self.selectedOrder.commIDSAQ;
-            
-            
-        } else {
-            UIButton *livrTypeSelect= (UIButton *)[cell viewWithTag:203];
-            [livrTypeSelect addTarget:self action:@selector(presentAllDeliveryOptions:) forControlEvents:UIControlEventTouchUpInside];
-            
-            UITextField *commDatePickup = (UITextField *)[cell viewWithTag:200];
-            [commDatePickup setDelegate:self];
-            
             UILabel *commIDSAQLbl = (UILabel *)[cell viewWithTag:204];
             commIDSAQLbl.hidden = YES;
             UILabel *commIDSAQ = (UILabel *)[cell viewWithTag:205];
             commIDSAQ.hidden = YES;
             
-            UIDatePicker *datePicker = [[UIDatePicker alloc] init];
-            datePicker.datePickerMode = UIDatePickerModeDate;
-            [datePicker addTarget:self action:@selector(datePickerValueChanged:)
-                 forControlEvents:UIControlEventValueChanged];
-            self.datePicker = datePicker;
-            [commDatePickup setInputView:datePicker];
-            [commDatePickup setInputAccessoryView:self.toolBar];
-            
-            datePicker.datePickerMode = UIDatePickerModeDate;
-            [datePicker addTarget:self action:@selector(datePickerValueChanged:)
-                 forControlEvents:UIControlEventValueChanged];
-            self.datePicker = datePicker;
-            [commDatePickup setInputView:datePicker];
-            [commDatePickup setInputAccessoryView:self.toolBar];
-            
             UITextField *commCommentaire = (UITextField *)[cell viewWithTag:201];
             [commCommentaire setDelegate:self];
-        }
         
         
         UILabel *totalLabel = (UILabel *)[cell viewWithTag:113];
         totalLabel.text = [NSString stringWithFormat:@"$%.2f",varTotal];
-        
-        UILabel *typeLivrLabel = (UILabel *)[cell viewWithTag:202];
-        if([appDelegate.cartTypeLivr isEqual:@"1"]){
-            typeLivrLabel.text = @"Pickup";
-        } else if([appDelegate.cartTypeLivr isEqual:@"1a"]){
-            typeLivrLabel.text = @"Pickup 24hres";
-        } else if([appDelegate.cartTypeLivr isEqual:@"1b"]){
-            typeLivrLabel.text = @"Pickup 48hres";
-        } else if([appDelegate.cartTypeLivr isEqual:@"2"]){
-            typeLivrLabel.text = @"Livraison";
-        }
         
         self.toolBar = [[UIToolbar alloc]initWithFrame:CGRectMake(0, -40, 320, 40)];
         self.toolBar.barStyle = UIBarStyleBlackOpaque;
@@ -725,23 +615,6 @@ double varTotal;
         UITextField *commDatePickup = (UITextField *)[cell viewWithTag:200];
         [commDatePickup setDelegate:self];
         
-        UIDatePicker *datePicker = [[UIDatePicker alloc] init];
-        datePicker.datePickerMode = UIDatePickerModeDate;
-        [datePicker addTarget:self action:@selector(datePickerValueChanged:)
-             forControlEvents:UIControlEventValueChanged];
-        self.datePicker = datePicker;
-        [commDatePickup setInputView:datePicker];
-        [commDatePickup setInputAccessoryView:self.toolBar];
-        
-        datePicker.datePickerMode = UIDatePickerModeDate;
-        [datePicker addTarget:self action:@selector(datePickerValueChanged:)
-             forControlEvents:UIControlEventValueChanged];
-        self.datePicker = datePicker;
-        [commDatePickup setInputView:datePicker];
-        [commDatePickup setInputAccessoryView:self.toolBar];
-        
-        UITextField *commCommentaire = (UITextField *)[cell viewWithTag:201];
-        [commCommentaire setDelegate:self];
         
         UIToolbar* userNameToolbar = [[UIToolbar alloc]initWithFrame:CGRectMake(0, 0, 320, 50)];
         userNameToolbar.barStyle = UIBarStyleBlackTranslucent;
@@ -803,7 +676,7 @@ double varTotal;
     } else if(indexPath.section == 2){
         rowSize = 140;
     } else {
-        rowSize = 210;
+        rowSize = 160;
     }
     return rowSize;
 }
@@ -813,23 +686,14 @@ double varTotal;
 }
 
 - (IBAction)addProductAction:(id)sender {
-    if(appDelegate.cartProducts.count > 11){
-        UIActionSheet *actionSheet = [[UIActionSheet alloc] initWithTitle:@"Vous ne pouvez ajouter plus de 12 produits sur une commande !" delegate:self cancelButtonTitle:nil destructiveButtonTitle:@"OK" otherButtonTitles:nil, nil];
-        
-        actionSheet.tag = 7;
-        
-        [actionSheet showInView:self.view];
-    } else {
-        [self performSegueWithIdentifier:@"toSelectProduct" sender:nil];
-    }
-    
+    [self performSegueWithIdentifier:@"toSelectProduct" sender:nil];
 }
 
 - (IBAction)confirmTransaction:(id)sender {
     
     bool doSubmit = YES;
     
-    if(appDelegate.sessionActiveClient == nil) {
+    if(appDelegate.reservationActiveClient == nil) {
         doSubmit = NO;
         UIActionSheet *actionSheet = [[UIActionSheet alloc] initWithTitle:@"Vous devez sélectionner le client !" delegate:self cancelButtonTitle:nil destructiveButtonTitle:@"OK" otherButtonTitles:nil, nil];
         
@@ -838,52 +702,20 @@ double varTotal;
         [actionSheet showInView:self.view];
     }
     
-    if(appDelegate.cartProducts.count < 1) {
-        doSubmit = NO;
-        UIActionSheet *actionSheet = [[UIActionSheet alloc] initWithTitle:@"Vous devez ajouter au moins 1 produit !" delegate:self cancelButtonTitle:nil destructiveButtonTitle:@"OK" otherButtonTitles:nil, nil];
+    //if(appDelegate.reservProducts.count < 1) {
+        //doSubmit = NO;
+        //UIActionSheet *actionSheet = [[UIActionSheet alloc] initWithTitle:@"Vous devez ajouter au moins 1 produit !" delegate:self cancelButtonTitle:nil destructiveButtonTitle:@"OK" otherButtonTitles:nil, nil];
         
-        actionSheet.tag = 5;
+        //actionSheet.tag = 5;
         
-        [actionSheet showInView:self.view];
-    }
+        //[actionSheet showInView:self.view];
+    //}
     
     if(doSubmit){
-    
-        UIActionSheet *actionSheet = [[UIActionSheet alloc] initWithTitle:@"Êtes-vous certain de vouloir soumettre la commande en mode révision? (Vous ne pourrez plus modifier la commande par la suite)." delegate:self cancelButtonTitle:nil destructiveButtonTitle:@"Soumettre" otherButtonTitles:@"Non", nil];
-    
+        
+        UIActionSheet *actionSheet = [[UIActionSheet alloc] initWithTitle:@"Êtes-vous certain de vouloir soumettre la reservation? (Rappelez-vous que les réservations affectent les stocks aussi)." delegate:self cancelButtonTitle:nil destructiveButtonTitle:@"Soumettre" otherButtonTitles:@"Non", nil];
+        
         actionSheet.tag = 2;
-    
-        [actionSheet showInView:self.view];
-    }
-}
-
-- (IBAction)saveTransactionDraft:(id)sender {
-    
-    bool doSubmit = YES;
-    
-    if(appDelegate.sessionActiveClient == nil) {
-        doSubmit = NO;
-        UIActionSheet *actionSheet = [[UIActionSheet alloc] initWithTitle:@"Vous devez sélectionner le client !" delegate:self cancelButtonTitle:nil destructiveButtonTitle:@"OK" otherButtonTitles:nil, nil];
-        
-        actionSheet.tag = 4;
-        
-        [actionSheet showInView:self.view];
-    }
-    
-    if(appDelegate.cartProducts.count < 1) {
-        doSubmit = NO;
-        UIActionSheet *actionSheet = [[UIActionSheet alloc] initWithTitle:@"Vous devez ajouter au moins 1 produit !" delegate:self cancelButtonTitle:nil destructiveButtonTitle:@"OK" otherButtonTitles:nil, nil];
-        
-        actionSheet.tag = 5;
-        
-        [actionSheet showInView:self.view];
-    }
-    
-    if(doSubmit){
-        
-        UIActionSheet *actionSheet = [[UIActionSheet alloc] initWithTitle:@"Êtes-vous certain de vouloir sauvegarder la commande en mode brouillon? (La commande ne sera pas expédiée à la SAQ tant qu'elle ne sera pas soumise pour révision)." delegate:self cancelButtonTitle:nil destructiveButtonTitle:@"Sauvegarder" otherButtonTitles:@"Non", nil];
-        
-        actionSheet.tag = 6;
         
         [actionSheet showInView:self.view];
     }
@@ -893,46 +725,19 @@ double varTotal;
     
     if(self.selectedOrder != nil) {
         MDCAppDelegate *appDelegate = [[UIApplication sharedApplication] delegate];
-        appDelegate.sessionActiveClient = nil;
-        appDelegate.cartProducts = nil;
-        appDelegate.cartQties = nil;
-        appDelegate.cartDateLivr = nil;
-        appDelegate.cartTypeLivr = nil;
-        appDelegate.cartDelaiPickup = nil;
-        appDelegate.cartCommentaire = nil;
+        appDelegate.reservationActiveClient = nil;
+        appDelegate.reservProducts = nil;
+        appDelegate.reservQties = nil;
+        appDelegate.reservCommentaire = nil;
         [[self tableView] reloadData];
         [self.navigationController popToRootViewControllerAnimated:YES];
     } else {
-        UIActionSheet *actionSheet = [[UIActionSheet alloc] initWithTitle:@"Supprimer la commande?" delegate:self cancelButtonTitle:nil destructiveButtonTitle:@"Supprimer" otherButtonTitles:@"Non", nil];
+        UIActionSheet *actionSheet = [[UIActionSheet alloc] initWithTitle:@"Supprimer la réservation?" delegate:self cancelButtonTitle:nil destructiveButtonTitle:@"Supprimer" otherButtonTitles:@"Non", nil];
         
         actionSheet.tag = 1;
         
         [actionSheet showInView:self.view];
     }
-    
-}
-
-- (void)presentAllDeliveryOptions:(id)sender{
-    
-    NSMutableArray *titleArray = [[NSMutableArray alloc] init];
-    
-    [titleArray addObject:@"Livraison"];
-    //[titleArray addObject:@"Pickup"];
-    [titleArray addObject:@"Pickup (24hres)"];
-    [titleArray addObject:@"Pickup (48hres)"];
-    
-    
-    UIActionSheet *actionSheet = [[UIActionSheet alloc] initWithTitle:@"Type de livraison" delegate:self cancelButtonTitle:nil destructiveButtonTitle:nil otherButtonTitles:nil];
-    actionSheet.tag = 3;
-    // ObjC Fast Enumeration
-    
-    for (NSString *title in titleArray) {
-        [actionSheet addButtonWithTitle:title];
-    }
-    
-    actionSheet.cancelButtonIndex = [actionSheet addButtonWithTitle:@"Annuler"];
-    
-    [actionSheet showInView:self.view];
     
 }
 
@@ -944,13 +749,10 @@ double varTotal;
                 NSLog(@"Pressed button 0");
                 
                 MDCAppDelegate *appDelegate = [[UIApplication sharedApplication] delegate];
-                appDelegate.sessionActiveClient = nil;
-                appDelegate.cartProducts = nil;
-                appDelegate.cartQties = nil;
-                appDelegate.cartDateLivr = nil;
-                appDelegate.cartTypeLivr = nil;
-                appDelegate.cartDelaiPickup = nil;
-                appDelegate.cartCommentaire = nil;
+                appDelegate.reservationActiveClient = nil;
+                appDelegate.reservProducts = nil;
+                appDelegate.reservQties = nil;
+                appDelegate.reservCommentaire = nil;
                 [[self tableView] reloadData];
                 [self.navigationController popToRootViewControllerAnimated:YES];
                 
@@ -959,92 +761,32 @@ double varTotal;
             } else if (buttonIndex == 2){
                 NSLog(@"Pressed button 2");
             }
-        break;
+            break;
             
         case 2:
             if(buttonIndex == 0){
                 NSLog(@"Pressed button 0");
                 if ([self.commCommentaire.text length] > 0 || self.commCommentaire.text != nil || [self.commCommentaire.text isEqual:@""] == FALSE){
-                    appDelegate.cartCommentaire = self.commCommentaire.text;
+                    appDelegate.reservCommentaire = self.commCommentaire.text;
                 }
                 NSString * statusSave = [self saveOrder:@"Revision"];
                 if(![statusSave isEqual: @"Error"]){
-                    NSInteger arraySize = [appDelegate.cartProducts count];
+                    NSInteger arraySize = [appDelegate.reservProducts count];
                     for(int i = 0; i < arraySize; i++){
                         Product *currProduct = nil;
-                        currProduct = [appDelegate.cartProducts objectAtIndex:i];
+                        currProduct = [appDelegate.reservProducts objectAtIndex:i];
                         NSString *currProdID = currProduct.vinID;
-                        NSString *currQty = [appDelegate.cartQties objectAtIndex:i];
+                        NSString *currQty = [appDelegate.reservQties objectAtIndex:i];
                         
                         [self saveOrderItem:statusSave prodID:currProdID qty:currQty];
                     }
                 }
                 
                 MDCAppDelegate *appDelegate = [[UIApplication sharedApplication] delegate];
-                appDelegate.sessionActiveClient = nil;
-                appDelegate.cartProducts = nil;
-                appDelegate.cartQties = nil;
-                appDelegate.cartDateLivr = nil;
-                appDelegate.cartDelaiPickup = nil;
-                appDelegate.cartTypeLivr = nil;
-                appDelegate.cartCommentaire = nil;
-                //[[self tableView] reloadData];
-                [self.navigationController popToRootViewControllerAnimated:YES];
-                
-            } else if(buttonIndex == 1){
-                NSLog(@"Pressed button 1 - 'Non' - Do nothing");
-            } else if (buttonIndex == 2){
-                NSLog(@"Pressed button 2");
-            }
-        break;
-        
-        case 3:
-            if(buttonIndex == 0){
-                NSLog(@"Pressed button 0 - Livraison");
-                //MDCAppDelegate *appDelegate = [[UIApplication sharedApplication] delegate];
-                appDelegate.cartTypeLivr = @"2";
-                [[self tableView] reloadData];
-                
-            } else if (buttonIndex == 1){
-                NSLog(@"Pressed button 2 - Pickup 24h");
-                //MDCAppDelegate *appDelegate = [[UIApplication sharedApplication] delegate];
-                appDelegate.cartTypeLivr = @"1a";
-                [[self tableView] reloadData];
-            } else if (buttonIndex == 2){
-                NSLog(@"Pressed button 2 - Pickup 48h");
-                //MDCAppDelegate *appDelegate = [[UIApplication sharedApplication] delegate];
-                appDelegate.cartTypeLivr = @"1b";
-                [[self tableView] reloadData];
-            }
-            break;
-        
-        case 6:
-            if(buttonIndex == 0){
-                NSLog(@"Pressed button 0");
-                if ([self.commCommentaire.text length] > 0 || self.commCommentaire.text != nil || [self.commCommentaire.text isEqual:@""] == FALSE){
-                    appDelegate.cartCommentaire = self.commCommentaire.text;
-                }
-                NSString * statusSave = [self saveOrder:@"Draft"];
-                if(![statusSave isEqual: @"Error"]){
-                    NSInteger arraySize = [appDelegate.cartProducts count];
-                    for(int i = 0; i < arraySize; i++){
-                        Product *currProduct = nil;
-                        currProduct = [appDelegate.cartProducts objectAtIndex:i];
-                        NSString *currProdID = currProduct.vinID;
-                        NSString *currQty = [appDelegate.cartQties objectAtIndex:i];
-                        
-                        [self saveOrderItem:statusSave prodID:currProdID qty:currQty];
-                    }
-                }
-                
-                MDCAppDelegate *appDelegate = [[UIApplication sharedApplication] delegate];
-                appDelegate.sessionActiveClient = nil;
-                appDelegate.cartProducts = nil;
-                appDelegate.cartQties = nil;
-                appDelegate.cartDateLivr = nil;
-                appDelegate.cartDelaiPickup = nil;
-                appDelegate.cartTypeLivr = nil;
-                appDelegate.cartCommentaire = nil;
+                appDelegate.reservationActiveClient = nil;
+                appDelegate.reservProducts = nil;
+                appDelegate.reservQties = nil;
+                appDelegate.reservCommentaire = nil;
                 //[[self tableView] reloadData];
                 [self.navigationController popToRootViewControllerAnimated:YES];
                 
@@ -1055,11 +797,54 @@ double varTotal;
             }
             break;
             
-        case 7:
+        case 3:
             if(buttonIndex == 0){
-                //NSLog(@"Pressed button 1 - 'Non' - Do nothing");
+                NSLog(@"Pressed button 0 - Livraison");
+                //MDCAppDelegate *appDelegate = [[UIApplication sharedApplication] delegate];
+                [[self tableView] reloadData];
+                
             } else if (buttonIndex == 1){
-                //NSLog(@"Pressed button 2");
+                NSLog(@"Pressed button 2 - Pickup 24h");
+                //MDCAppDelegate *appDelegate = [[UIApplication sharedApplication] delegate];
+                [[self tableView] reloadData];
+            } else if (buttonIndex == 2){
+                NSLog(@"Pressed button 2 - Pickup 48h");
+                //MDCAppDelegate *appDelegate = [[UIApplication sharedApplication] delegate];
+                [[self tableView] reloadData];
+            }
+            break;
+            
+        case 6:
+            if(buttonIndex == 0){
+                NSLog(@"Pressed button 0");
+                if ([self.commCommentaire.text length] > 0 || self.commCommentaire.text != nil || [self.commCommentaire.text isEqual:@""] == FALSE){
+                    appDelegate.reservCommentaire = self.commCommentaire.text;
+                }
+                NSString * statusSave = [self saveOrder:@"Draft"];
+                if(![statusSave isEqual: @"Error"]){
+                    NSInteger arraySize = [appDelegate.reservProducts count];
+                    for(int i = 0; i < arraySize; i++){
+                        Product *currProduct = nil;
+                        currProduct = [appDelegate.reservProducts objectAtIndex:i];
+                        NSString *currProdID = currProduct.vinID;
+                        NSString *currQty = [appDelegate.reservQties objectAtIndex:i];
+                        
+                        [self saveOrderItem:statusSave prodID:currProdID qty:currQty];
+                    }
+                }
+                
+                MDCAppDelegate *appDelegate = [[UIApplication sharedApplication] delegate];
+                appDelegate.reservationActiveClient = nil;
+                appDelegate.reservProducts = nil;
+                appDelegate.reservQties = nil;
+                appDelegate.reservCommentaire = nil;
+                //[[self tableView] reloadData];
+                [self.navigationController popToRootViewControllerAnimated:YES];
+                
+            } else if(buttonIndex == 1){
+                NSLog(@"Pressed button 1 - 'Non' - Do nothing");
+            } else if (buttonIndex == 2){
+                NSLog(@"Pressed button 2");
             }
             break;
             
@@ -1070,8 +855,6 @@ double varTotal;
 
 
 - (NSString *)saveOrder:(NSString *) orderStatus {
-    
-    appDelegate.ordersViewNeedsRefreshing = YES;
     
     NSString * clientID;
     NSString * clientName;
@@ -1147,21 +930,17 @@ double varTotal;
         sqlite3_finalize(statement);
     }
     
+    
     char *errorMsg = nil;
-    int commStatutID;
-    if([orderStatus isEqual:@"Draft"]){
-        commStatutID = 1;
-    } else {
-        commStatutID = 2;
-    }
+    int commStatutID = 6;
     
     NSString * insertResult;
     
     if(self.selectedOrder != nil) {
         if([self.selectedOrder.commDataSource isEqual:@"backend"]){
-                
+            
             sqlite3_stmt *stmt;
-            char *del_stmt = "DELETE FROM CommandeItems WHERE commItemCommID = ?";
+            char *del_stmt = "DELETE FROM ReservationItems WHERE commItemCommID = ?";
             int commID = [self.selectedOrder.commID intValue];
             
             if(sqlite3_prepare_v2(database, del_stmt, -1, &stmt, NULL) != SQLITE_OK)
@@ -1179,9 +958,9 @@ double varTotal;
             
             char *errmsg;
             
-            char *update = "UPDATE Commandes SET "
-            "commStatutID = ? , commRepID = ?, commClientID = ?, commTypeClntID = ?, commCommTypeLivrID= ?, "
-            "commDelaiPickup= ?, commDatePickup = ?, commCommentaire = ?, commDateFact = ?, commIsDraftModified = ? "
+            char *update = "UPDATE Reservations SET "
+            "commStatutID = ? , commRepID = ?, commClientID = ?, "
+            "commCommentaire = ?, commIsDraftModified = ? "
             "WHERE commID = ?;";
             
             /*
@@ -1197,32 +976,9 @@ double varTotal;
             commID = [self.selectedOrder.commID intValue];
             int commRepID = [appDelegate.currLoggedUser intValue];
             int commClientID = [currentClient.clientID intValue];
-            int commTypeLivr;
-            int commDelaiPickup;
             int commIsDraftModified = 1;
             
-            if([appDelegate.cartTypeLivr isEqual:@""]){
-                commTypeLivr = clientTypeLivrID;
-                if(commTypeLivr == 0){
-                    commTypeLivr = 1;
-                }
-                commDelaiPickup = 0;
-            } else if([appDelegate.cartTypeLivr isEqual:@"1"]){
-                commTypeLivr = 1;
-                commDelaiPickup = 0;
-            } else if([appDelegate.cartTypeLivr isEqual:@"1a"]){
-                commTypeLivr = 1;
-                commDelaiPickup = 24;
-            } else if([appDelegate.cartTypeLivr isEqual:@"1b"]){
-                commTypeLivr = 1;
-                commDelaiPickup = 48;
-            } else {
-                commTypeLivr = 2;
-                commDelaiPickup = 0;
-            }
-            
-            NSString *datePickup = appDelegate.cartDateLivr;
-            NSString *testChar = appDelegate.cartCommentaire;
+            NSString *testChar = appDelegate.reservCommentaire;
             
             if(sqlite3_prepare_v2(database, update, -1, &insStmt, NULL) != SQLITE_OK)
                 NSLog(@"Error while creating update statement. %s", sqlite3_errmsg(database));
@@ -1230,14 +986,9 @@ double varTotal;
             sqlite3_bind_int(insStmt, 1, commStatutID);
             sqlite3_bind_int(insStmt, 2, commRepID);
             sqlite3_bind_int(insStmt, 3, commClientID);
-            sqlite3_bind_int(insStmt, 4, clientTypeClntID);
-            sqlite3_bind_int(insStmt, 5, commTypeLivr);
-            sqlite3_bind_int(insStmt, 6, commDelaiPickup);
-            sqlite3_bind_text(insStmt, 7, [datePickup UTF8String], -1, NULL);
-            sqlite3_bind_text(insStmt, 8, [testChar UTF8String], -1, NULL);
-            sqlite3_bind_text(insStmt, 9, [@"" UTF8String], -1, NULL);
-            sqlite3_bind_int(insStmt, 10, commIsDraftModified);
-            sqlite3_bind_int(insStmt, 11, commID);
+            sqlite3_bind_text(insStmt, 4, [testChar UTF8String], -1, NULL);
+            sqlite3_bind_int(insStmt, 5, commIsDraftModified);
+            sqlite3_bind_int(insStmt, 6, commID);
             
             sqlite3_exec(database, "COMMIT", NULL, NULL, &errmsg);
             
@@ -1254,19 +1005,18 @@ double varTotal;
             //sqlite3_finalize(insStmt);
             
             
-                
+            
             
         } else {
             
-            //NSString *sql = [NSString stringWithFormat:@"DELETE FROM LocalCommandeItem WHERE commItemCommID = %@",@"?"];
             sqlite3_stmt *stmt;
-            char *del_stmt = "DELETE FROM LocalCommandeItems WHERE commItemCommID = ?";
+            char *del_stmt = "DELETE FROM LocalReservationItems WHERE commItemCommID = ?";
             int commID = [self.selectedOrder.commID intValue];
             
             if(sqlite3_prepare_v2(database, del_stmt, -1, &stmt, NULL) != SQLITE_OK)
                 NSLog(@"Error while creating deletion statement. %s", sqlite3_errmsg(database));
             
-                sqlite3_bind_int(stmt, 1, commID);
+            sqlite3_bind_int(stmt, 1, commID);
             
             if (sqlite3_step(stmt) == SQLITE_DONE)
             {
@@ -1278,9 +1028,9 @@ double varTotal;
             
             char* errmsg;
             
-            char *update = "UPDATE LocalCommandes SET "
-            "commStatutID = ? , commRepID = ?, commClientID = ?, commTypeClntID = ?, commCommTypeLivrID= ?, "
-            "commDelaiPickup= ?, commDatePickup = ?, commCommentaire = ?, commDateFact = ? "
+            char *update = "UPDATE LocalReservations SET "
+            "commStatutID = ? , commRepID = ?, commClientID = ?, "
+            "commCommentaire = ? "
             "WHERE commID = ?;";
             
             /*
@@ -1296,45 +1046,17 @@ double varTotal;
             commID = [self.selectedOrder.commID intValue];
             int commRepID = [appDelegate.currLoggedUser intValue];
             int commClientID = [currentClient.clientID intValue];
-            int commTypeLivr;
-            int commDelaiPickup;
             
-            if([appDelegate.cartTypeLivr isEqual:@""]){
-                commTypeLivr = clientTypeLivrID;
-                if(commTypeLivr == 0){
-                    commTypeLivr = 1;
-                }
-                commDelaiPickup = 0;
-            } else if([appDelegate.cartTypeLivr isEqual:@"1"]){
-                commTypeLivr = 1;
-                commDelaiPickup = 0;
-            } else if([appDelegate.cartTypeLivr isEqual:@"1a"]){
-                commTypeLivr = 1;
-                commDelaiPickup = 24;
-            } else if([appDelegate.cartTypeLivr isEqual:@"1b"]){
-                commTypeLivr = 1;
-                commDelaiPickup = 48;
-            } else if([appDelegate.cartTypeLivr isEqual:@"2"]){
-                commTypeLivr = 2;
-                commDelaiPickup = 0;
-            }
-            
-            NSString *datePickup = appDelegate.cartDateLivr;
-            NSString *testChar = appDelegate.cartCommentaire;
+            NSString *testChar = appDelegate.reservCommentaire;
             
             if(sqlite3_prepare_v2(database, update, -1, &insStmt, NULL) != SQLITE_OK)
                 NSLog(@"Error while creating update statement. %s", sqlite3_errmsg(database));
             
-                sqlite3_bind_int(insStmt, 1, commStatutID);
-                sqlite3_bind_int(insStmt, 2, commRepID);
-                sqlite3_bind_int(insStmt, 3, commClientID);
-                sqlite3_bind_int(insStmt, 4, clientTypeClntID);
-                sqlite3_bind_int(insStmt, 5, commTypeLivr);
-                sqlite3_bind_int(insStmt, 6, commDelaiPickup);
-                sqlite3_bind_text(insStmt, 7, [datePickup UTF8String], -1, NULL);
-                sqlite3_bind_text(insStmt, 8, [testChar UTF8String], -1, NULL);
-                sqlite3_bind_text(insStmt, 9, [@"" UTF8String], -1, NULL);
-                sqlite3_bind_int(insStmt, 10, commID);
+            sqlite3_bind_int(insStmt, 1, commStatutID);
+            sqlite3_bind_int(insStmt, 2, commRepID);
+            sqlite3_bind_int(insStmt, 3, commClientID);
+            sqlite3_bind_text(insStmt, 4, [testChar UTF8String], -1, NULL);
+            sqlite3_bind_int(insStmt, 5, commID);
             
             sqlite3_exec(database, "COMMIT", NULL, NULL, &errmsg);
             
@@ -1353,59 +1075,30 @@ double varTotal;
         
     } else {
         
-        char *update = "INSERT INTO LocalCommandes "
-        "(commStatutID, commRepID, commClientID, commTypeClntID, commCommTypeLivrID, commDelaiPickup, commDatePickup, commCommentaire, commDateFact) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);";
+        char *update = "INSERT INTO LocalReservations "
+        "(commStatutID, commRepID, commClientID, commCommentaire) "
+        "VALUES (?, ?, ?, ?);";
         
         /*
-         @"CREATE TABLE IF NOT EXISTS LocalCommandes "
-         "(commID INTEGER PRIMARY KEY AUTOINCREMENT, commStatutID INT, commRepID INT, commIDSAQ TEXT, "
-         "commClientID INT, commTypeClntID INT, commCommTypeLivrID INT, commDateFact TEXT, "
-         "commDelaiPickup INT, commDatePickup TEXT, commClientJourLivr TEXT, commPartSuccID INT, "
+         @"CREATE TABLE IF NOT EXISTS Reservations "
+         "(commID INT PRIMARY KEY, commStatutID INT, commRepID INT, "
+         "commClientID INT, commDateSaisie TEXT, "
          "commCommentaire TEXT, commLastUpdated TEXT);"
-        */
+         */
         
         sqlite3_stmt *stmt;
         
         int commRepID = [appDelegate.currLoggedUser intValue];
         int commClientID = [currentClient.clientID intValue];
-        int commTypeLivr;
-        int commDelaiPickup;
         
-        if([appDelegate.cartTypeLivr isEqual:@""]){
-            commTypeLivr = clientTypeLivrID;
-            if(commTypeLivr == 0){
-                commTypeLivr = 1;
-            }
-            commDelaiPickup = 0;
-        } else if([appDelegate.cartTypeLivr isEqual:@"1"]){
-            commTypeLivr = 1;
-            commDelaiPickup = 0;
-        } else if([appDelegate.cartTypeLivr isEqual:@"1a"]){
-            commTypeLivr = 1;
-            commDelaiPickup = 24;
-        } else if([appDelegate.cartTypeLivr isEqual:@"1b"]){
-            commTypeLivr = 1;
-            commDelaiPickup = 48;
-        } else if([appDelegate.cartTypeLivr isEqual:@"2"]){
-            commTypeLivr = 2;
-            commDelaiPickup = 0;
-        }
-        
-        NSString *datePickup = appDelegate.cartDateLivr;
-        NSString *testChar = appDelegate.cartCommentaire;
+        NSString *testChar = appDelegate.reservCommentaire;
         
         if (sqlite3_prepare_v2(database, update, -1, &stmt, nil)
             == SQLITE_OK) {
             sqlite3_bind_int(stmt, 1, commStatutID);
             sqlite3_bind_int(stmt, 2, commRepID);
             sqlite3_bind_int(stmt, 3, commClientID);
-            sqlite3_bind_int(stmt, 4, clientTypeClntID);
-            sqlite3_bind_int(stmt, 5, commTypeLivr);
-            sqlite3_bind_int(stmt, 6, commDelaiPickup);
-            sqlite3_bind_text(stmt, 7, [datePickup UTF8String], -1, NULL);
-            sqlite3_bind_text(stmt, 8, [testChar UTF8String], -1, NULL);
-            sqlite3_bind_text(stmt, 9, [@"" UTF8String], -1, NULL);
+            sqlite3_bind_text(stmt, 4, [testChar UTF8String], -1, NULL);
         }
         
         if (sqlite3_step(stmt) != SQLITE_DONE){
@@ -1421,7 +1114,6 @@ double varTotal;
     }
     
     return insertResult;
-    sqlite3_close(database);
 }
 
 
@@ -1430,12 +1122,12 @@ double varTotal;
     
     char *update;
     if([self.selectedOrder.commDataSource isEqual:@"backend"]){
-        update = "INSERT INTO CommandeItems "
+        update = "INSERT INTO ReservationItems "
         "(commItemCommID, commItemVinID, commItemVinQte) "
         "VALUES (?, ?, ?);";
         
     } else {
-        update = "INSERT INTO LocalCommandeItems "
+        update = "INSERT INTO LocalReservationItems "
         "(commItemCommID, commItemVinID, commItemVinQte) "
         "VALUES (?, ?, ?);";
     }
@@ -1467,7 +1159,7 @@ double varTotal;
 
 - (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
     
-    if((self.selectedOrder != nil) && (![self.selectedOrder.commStatutID isEqual: @"1"])) {
+    if((self.selectedOrder != nil) && (![self.selectedOrder.commStatutID isEqual: @"6"])) {
         return NO;
     } else {
         return YES;
@@ -1477,10 +1169,10 @@ double varTotal;
 - (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
     if (editingStyle == UITableViewCellEditingStyleDelete) {
         
-        [appDelegate.cartProducts removeObjectAtIndex:indexPath.row];
-        [appDelegate.cartQties removeObjectAtIndex:indexPath.row];
-        [appDelegate.cartTransType removeObjectAtIndex:indexPath.row];
-
+        [appDelegate.reservProducts removeObjectAtIndex:indexPath.row];
+        [appDelegate.reservQties removeObjectAtIndex:indexPath.row];
+        [appDelegate.reservTransType removeObjectAtIndex:indexPath.row];
+        
         [itemImageFiles removeObjectAtIndex:indexPath.row];
         [itemDetails removeObjectAtIndex:indexPath.row];
         [itemQties removeObjectAtIndex:indexPath.row];
@@ -1489,7 +1181,7 @@ double varTotal;
         [itemFraisConsult removeObjectAtIndex:indexPath.row];
         [itemSubTotal removeObjectAtIndex:indexPath.row];
         
-        productList = appDelegate.cartProducts;
+        productList = appDelegate.reservProducts;
         NSInteger arraySize = [productList count];
         
         varSubTotal = 0;
@@ -1497,11 +1189,11 @@ double varTotal;
         
         for(int i = 0; i < arraySize; i++){
             Product *currProduct = nil;
-            currProduct = [appDelegate.cartProducts objectAtIndex:i];
+            currProduct = [appDelegate.reservProducts objectAtIndex:i];
             
             double tmpCalc = [currProduct.vinPrixAchat doubleValue] + [currProduct.vinFraisEtiq doubleValue] + [currProduct.vinFraisBout doubleValue];
             
-            double qtyTmp = [[appDelegate.cartQties objectAtIndex:i] doubleValue];
+            double qtyTmp = [[appDelegate.reservQties objectAtIndex:i] doubleValue];
             double unitPriceTmp = tmpCalc;
             double subTotalTmp = qtyTmp * unitPriceTmp;
             
@@ -1516,21 +1208,17 @@ double varTotal;
 
 - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender{
     if ([segue.identifier isEqualToString:@"toSelectClient"]){
-        
         BIDSelectClientTableVC *clientSelectViewController = segue.destinationViewController;
-        clientSelectViewController.pickupSource = @"Commande";
+        clientSelectViewController.pickupSource = @"Reservation";
         
     }
     
     if ([segue.identifier isEqualToString:@"toSelectProduct"]){
-        
         BIDSelectProductTableVC *productSelectViewController = segue.destinationViewController;
-        productSelectViewController.pickupSource = @"Commande";
+        productSelectViewController.pickupSource = @"Reservation";
         
     }
     
-    
 }
-
 
 @end

@@ -32,6 +32,7 @@
 @property (nonatomic, strong) NSString *commRepID;
 @property (nonatomic, strong) NSString *commIDSAQ;
 @property (nonatomic, strong) NSString *commClientID;
+@property (nonatomic, strong) NSString *commClientName;
 @property (nonatomic, strong) NSString *commTypeClntID;
 @property (nonatomic, strong) NSString *commTypeLivrID;
 @property (nonatomic, strong) NSString *commDateFact;
@@ -41,8 +42,11 @@
 @property (nonatomic, strong) NSString *commPartSuccID;
 @property (nonatomic, strong) NSString *commCommentaire;
 @property (nonatomic, strong) NSString *commLastUpdated;
+@property (nonatomic, strong) NSString *commIsDraftModified;
 
 @property (nonatomic, strong) NSString *commDataSource;
+
+@property (nonatomic, strong) NSString *remoteCommID;
 
 
 @end

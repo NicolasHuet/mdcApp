@@ -9,10 +9,11 @@
 #import <UIKit/UIKit.h>
 #import "Product.h"
 
-@interface BIDProdDetailsViewController : UITableViewController
+@interface BIDProdDetailsViewController : UITableViewController <UIActionSheetDelegate>
 
 @property (nonatomic, strong) Product *product;
 @property (nonatomic) Boolean isInSelectMode;
+@property (strong,nonatomic) NSString *pickupSource;
 
 @property (strong, nonatomic) IBOutlet UIImageView *prodDetailImage;
 @property (strong, nonatomic) IBOutlet UILabel *prodName;

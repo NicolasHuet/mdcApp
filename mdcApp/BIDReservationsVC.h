@@ -1,9 +1,9 @@
 //
-//  BIDOrdersTableViewController.h
+//  BIDReservationsVC.h
 //  mdcApp
 //
-//  Created by Nicolas Huet on 2014-09-03.
-//  Copyright (c) 2014 MaitreDeChai. All rights reserved.
+//  Created by Nicolas Huet on 2015-05-21.
+//  Copyright (c) 2015 MaitreDeChai. All rights reserved.
 //
 
 #import <UIKit/UIKit.h>
@@ -13,7 +13,7 @@
 #import "Order.h"
 #import "OrderItem.h"
 
-@interface BIDOrdersTableViewController : UITableViewController <UISearchBarDelegate, UISearchDisplayDelegate, UIActionSheetDelegate>
+@interface BIDReservationsVC : UITableViewController <UISearchBarDelegate, UISearchDisplayDelegate, UIActionSheetDelegate>
 
 @property (nonatomic,strong) NSMutableArray *orderArray;
 @property (strong,nonatomic) NSMutableArray *filteredOrderArray;
@@ -21,8 +21,6 @@
 
 @property (nonatomic, strong) NSMutableArray *orderSyncArray;
 @property (nonatomic, strong) NSMutableArray *orderItemsArray;
-
-@property (nonatomic) Boolean needsRefreshing;
 
 - (IBAction)actionToNewOrder:(id)sender;
 
