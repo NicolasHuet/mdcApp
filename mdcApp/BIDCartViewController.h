@@ -10,6 +10,7 @@
 #import "MDCAppDelegate.h"
 #import "BIDSelectClientTableVC.h"
 #import "BIDSelectProductTableVC.h"
+#import "BIDProdDetailsViewController.h"
 #import "Product.h"
 #import "Client.h"
 #import "Order.h"

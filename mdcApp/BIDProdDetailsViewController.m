@@ -14,7 +14,10 @@
 @implementation BIDProdDetailsViewController
 
 @synthesize isInSelectMode;
+@synthesize isInEditMode;
 @synthesize pickupSource;
+@synthesize cartArrayIndex;
+@synthesize currProductQty;
 
 - (id)initWithStyle:(UITableViewStyle)style
 {
@@ -29,23 +32,23 @@
 {
     [super viewDidLoad];
 
-    // Uncomment the following line to preserve selection between presentations.
-    // self.clearsSelectionOnViewWillAppear = NO;
- 
-    // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
-    // self.navigationItem.rightBarButtonItem = self.editButtonItem;
     if(self.isInSelectMode){
         self.addQtyLbl.hidden = NO;
         self.addEmpaqButton.hidden = NO;
         self.subsEmpaqButton.hidden = NO;
         self.addCartButton.hidden = NO;
+    } else if(self.isInEditMode){
+        self.addQtyLbl.hidden = NO;
+        self.addEmpaqButton.hidden = NO;
+        self.subsEmpaqButton.hidden = NO;
+        self.saveToCartButton.hidden = NO;
+        self.addQtyLbl.text = [NSString stringWithFormat:@"%i", currProductQty];
     } else {
         self.addQtyLbl.hidden = YES;
         self.addEmpaqButton.hidden = YES;
         self.subsEmpaqButton.hidden = YES;
         self.addCartButton.hidden = YES;
     }
-    
     
     if([self.product.vinCouleurID isEqual: @"3"]){
         self.prodDetailImage.image =  [UIImage imageNamed:@"wineRose(128)"];
@@ -230,6 +233,31 @@
     }
     
     
+}
+
+- (IBAction)saveToCart:(id)sender {
+    [self.addQty resignFirstResponder];
+    
+    MDCAppDelegate *appDelegate = (MDCAppDelegate *)[[UIApplication sharedApplication] delegate];
+    
+    if([self.pickupSource isEqual: @"Commande"]){
+        
+        int testForZero = [self.addQty.text intValue];
+        
+        if(testForZero > 0){
+            [appDelegate.cartQties replaceObjectAtIndex:self.cartArrayIndex withObject:self.addQty.text];
+            [self.navigationController popViewControllerAnimated:YES];
+            
+        }
+    } else {
+        
+        int testForZero = [self.addQty.text intValue];
+        
+        if(testForZero > 0){
+            [appDelegate.reservQties replaceObjectAtIndex:self.cartArrayIndex withObject:self.addQty.text];
+            [self.navigationController popViewControllerAnimated:YES];
+        }
+    }
 }
 
 - (void)actionSheet:(UIActionSheet *)actionSheet clickedButtonAtIndex:(NSInteger)buttonIndex

@@ -46,12 +46,42 @@ NSData *jsonDataForModifiedReservations;
 {
     [super viewDidLoad];
     
-    self.orderArray = [[NSMutableArray alloc] init];
-    int numberOfRows = 0;
+    [self reloadViewFromDatabase];
+    
+    appDelegate = [[UIApplication sharedApplication] delegate];
+    
+    self.tableView.rowHeight = 70;
+    self.clearsSelectionOnViewWillAppear = NO;
     
     CGRect newBounds = self.tableView.bounds;
     newBounds.origin.y = newBounds.origin.y + orderSearchbar.bounds.size.height;
     self.tableView.bounds = newBounds;
+    
+    UIEdgeInsets inset = UIEdgeInsetsMake(5, 0, 0, 0);
+    self.tableView.contentInset = inset;
+    
+    appDelegate.reservationsViewNeedsRefreshing = NO;
+    
+    self.filteredOrderArray = [NSMutableArray arrayWithCapacity:[orderArray count]];
+    
+    // Reload the table
+    [[self tableView] reloadData];
+}
+
+- (void) viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:YES];
+    
+    if(appDelegate.reservationsViewNeedsRefreshing) {
+        [self reloadViewFromDatabase];
+        appDelegate.reservationsViewNeedsRefreshing = NO;
+    }
+    
+    [[self tableView] reloadData];
+}
+
+- (void) reloadViewFromDatabase {
+    self.orderArray = [[NSMutableArray alloc] init];
+    int numberOfRows = 0;
     
     if (sqlite3_open([[self dataFilePath] UTF8String], &database)
         != SQLITE_OK) {
@@ -267,23 +297,8 @@ NSData *jsonDataForModifiedReservations;
         sqlite3_finalize(statement);
     }
     
-    appDelegate = [[UIApplication sharedApplication] delegate];
-    
-    self.tableView.rowHeight = 70;
-    self.clearsSelectionOnViewWillAppear = NO;
-    
-    UIEdgeInsets inset = UIEdgeInsetsMake(5, 0, 0, 0);
-    self.tableView.contentInset = inset;
-    
     self.filteredOrderArray = [NSMutableArray arrayWithCapacity:[orderArray count]];
     
-    // Reload the table
-    [[self tableView] reloadData];
-}
-
-- (void) viewWillAppear:(BOOL)animated {
-    [super viewWillAppear:YES];
-    [[self tableView] reloadData];
 }
 
 - (void)didReceiveMemoryWarning
@@ -2228,6 +2243,10 @@ NSData *jsonDataForModifiedReservations;
             }
             break;
     }
+}
+
+- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
+    return NO;
 }
 
 

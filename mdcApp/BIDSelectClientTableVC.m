@@ -59,7 +59,7 @@ sqlite3 *database;
     if([appDelegate.currLoggedUserRole  isEqual: @"admin"]){
         query = [NSString stringWithFormat:@"SELECT * FROM Clients"];
     } else {
-        query = [NSString stringWithFormat:@"SELECT * FROM Clients WHERE clientTitulaireID = %@",appDelegate.currLoggedUser];
+        query = [NSString stringWithFormat:@"SELECT * FROM Clients WHERE clientTitulaireID = %@ OR clientTempTitulaireID = %@",appDelegate.currLoggedUser,appDelegate.currLoggedUser];
     }
     
     sqlite3_stmt *statement;
@@ -204,7 +204,7 @@ sqlite3 *database;
     if([appDelegate.currLoggedUserRole  isEqual: @"admin"]){
         query = [NSString stringWithFormat:@"SELECT * FROM Clients"];
     } else {
-        query = [NSString stringWithFormat:@"SELECT * FROM Clients WHERE clientTitulaireID = %@",appDelegate.currLoggedUser];
+        query = [NSString stringWithFormat:@"SELECT * FROM Clients WHERE clientTitulaireID = %@ OR clientTempTitulaireID = %@",appDelegate.currLoggedUser,appDelegate.currLoggedUser];
     }
     
     

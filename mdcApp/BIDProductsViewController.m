@@ -7,6 +7,7 @@
 //
 
 #import "BIDProductsViewController.h"
+#import "MDCAppDelegate.h"
 
 @implementation BIDProductsViewController
 
@@ -16,6 +17,7 @@
 
 Client *currentClient;
 sqlite3 *database;
+MDCAppDelegate *appDelegate;
 
 - (id)initWithStyle:(UITableViewStyle)style
 {
@@ -39,12 +41,33 @@ sqlite3 *database;
 {
     [super viewDidLoad];
     
-    self.productArray = [[NSMutableArray alloc] init];
-    
-    int numberOfRows = 0;
-    
     self.tableView.rowHeight = 90;
     self.clearsSelectionOnViewWillAppear = NO;
+    appDelegate = [[UIApplication sharedApplication] delegate];
+    
+    [self reloadViewFromDatabase];
+    appDelegate.productsViewNeedsRefreshing = NO;
+    
+    // Reload the table
+    [[self tableView] reloadData];
+    
+}
+
+-(void) viewWillAppear:(BOOL)animated {
+    
+    [super viewWillAppear:YES];
+    
+    if(appDelegate.productsViewNeedsRefreshing) {
+        [self reloadViewFromDatabase];
+        appDelegate.productsViewNeedsRefreshing = NO;
+    }
+    
+    [[self tableView] reloadData];
+    
+}
+
+- (void) reloadViewFromDatabase {
+    self.productArray = [[NSMutableArray alloc] init];
     
     if (sqlite3_open([[self dataFilePath] UTF8String], &database)
         != SQLITE_OK) {
@@ -193,198 +216,11 @@ sqlite3 *database;
             productToAdd.vinDisponible = [NSString stringWithFormat:@"%i",vinDisponible];
             
             [self.productArray addObject:productToAdd];
-            
-            
-            numberOfRows = numberOfRows + 1;
-            
         }
         sqlite3_finalize(statement);
     }
     
-    NSLog(@"Number of products : %i", numberOfRows);
-    
     self.filteredProductsArray = [NSMutableArray arrayWithCapacity:[productArray count]];
-    
-    // Reload the table
-    [[self tableView] reloadData];
-    
-}
-
--(void) viewWillAppear:(BOOL)animated {
-    
-    [super viewWillAppear:YES];
-    [[self tableView] reloadData];
-    
-    /*
-    self.productArray = [[NSMutableArray alloc] init];
-    
-    int numberOfRows = 0;
-    
-    self.tableView.rowHeight = 90;
-    self.clearsSelectionOnViewWillAppear = NO;
-    
-    if (sqlite3_open([[self dataFilePath] UTF8String], &database)
-        != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Failed to open database");
-    }
-    
-    //NSString *query = [NSString stringWithFormat:@"SELECT * FROM Vins WHERE vinDisponible = 1 AND vinEpuise = 0 ORDER BY vinNom"];
-    NSString *query = [NSString stringWithFormat:@"SELECT * FROM Vins WHERE vinEpuise = 0 ORDER BY vinNom"];
-    
-    sqlite3_stmt *statement;
-    if (sqlite3_prepare_v2(database, [query UTF8String],
-                           -1, &statement, nil) == SQLITE_OK)
-    {
-        while (sqlite3_step(statement) == SQLITE_ROW) {
-            //int row = sqlite3_column_int(statement, 0);
-            
-            char *columnData;
-            int columnIntValue;
-            double colDblValue;
-            int vinID;
-            NSString * vinNumero;
-            NSString * vinNom;
-            int vinCouleurID;
-            int vinEmpaq;
-            int vinRegionID;
-            NSString * vinNoDemande;
-            int vinIDFournisseur;
-            NSString * vinDateAchat;
-            int vinQteAchat;
-            int vinTotalAssigned;
-            NSString * vinFormat;
-            double vinPrixAchat;
-            double vinFraisEtiq;
-            double vinFraisBout;
-            double vinFraisBoutPart;
-            double vinPrixVente;
-            int vinEpuise;
-            int vinDisponible;
-            
-            //
-             //1- vinID INT PRIMARY KEY,
-             //2- vinNumero TEXT,
-             //3- vinNom TEXT,
-             //4- vinCouleurID INT,
-             //5- vinEmpaq INT,
-             //6- vinRegionID INT,
-             //7- vinNoDemande TEXT,
-             //8- vinIDFournisseur TEXT,
-             //9- vinDateAchat TEXT,
-             //10- vinQteAchat INT,
-             //11- vinTotalAssigned INT,
-             //12- vinFormat TEXT,
-             //13- vinPrixAchat REAL,
-             //14- vinFraisEtiq REAL,
-             //15- vinFraisBout REAL,
-             //16- vinFraisBoutPart REAL,
-             //17- vinPrixVente REAL,
-             //18- vinEpuise INT,
-             //19- vinDisponible INT
-             //
-            
-            columnIntValue = (int)sqlite3_column_int(statement, 0);
-            vinID = columnIntValue;
-            
-            columnData = (char *)sqlite3_column_text(statement, 1);
-            vinNumero = [[NSString alloc] initWithUTF8String:columnData];
-            
-            columnData = (char *)sqlite3_column_text(statement, 2);
-            vinNom = [[NSString alloc] initWithUTF8String:columnData];
-            
-            columnIntValue = (int)sqlite3_column_int(statement, 3);
-            vinCouleurID = columnIntValue;
-            
-            columnIntValue = (int)sqlite3_column_int(statement, 4);
-            vinEmpaq = columnIntValue;
-            
-            columnIntValue = (int)sqlite3_column_int(statement, 5);
-            vinRegionID = columnIntValue;
-            
-            columnData = (char *)sqlite3_column_text(statement, 6);
-            vinNoDemande = [[NSString alloc] initWithUTF8String:columnData];
-            
-            columnIntValue = (int)sqlite3_column_int(statement, 7);
-            vinIDFournisseur = columnIntValue;
-            
-            columnData = (char *)sqlite3_column_text(statement, 8);
-            vinDateAchat = [[NSString alloc] initWithUTF8String:columnData];
-            
-            columnIntValue = (int)sqlite3_column_int(statement, 9);
-            vinQteAchat = columnIntValue;
-            
-            columnIntValue = (int)sqlite3_column_int(statement, 10);
-            vinTotalAssigned = columnIntValue;
-            
-            columnData = (char *)sqlite3_column_text(statement, 11);
-            vinFormat = [[NSString alloc] initWithUTF8String:columnData];
-            
-            colDblValue = (double)sqlite3_column_double(statement, 12);
-            vinPrixAchat = colDblValue;
-            
-            colDblValue = (double)sqlite3_column_double(statement, 13);
-            vinFraisEtiq = colDblValue;
-            
-            colDblValue = (double)sqlite3_column_double(statement, 14);
-            vinFraisBout = colDblValue;
-            
-            colDblValue = (double)sqlite3_column_double(statement, 15);
-            vinFraisBoutPart = colDblValue;
-            
-            colDblValue = (double)sqlite3_column_double(statement, 16);
-            vinPrixVente = colDblValue;
-            
-            columnIntValue = (int)sqlite3_column_int(statement, 17);
-            vinEpuise = columnIntValue;
-            
-            columnIntValue = (int)sqlite3_column_int(statement, 18);
-            vinDisponible = columnIntValue;
-            
-            Product *productToAdd = [[Product alloc] init];
-            
-            productToAdd.vinID = [NSString stringWithFormat:@"%i",vinID];
-            productToAdd.vinNumero = vinNumero;
-            productToAdd.vinNom = vinNom;
-            
-            productToAdd.vinCouleurID = [NSString stringWithFormat:@"%i",vinCouleurID];
-            productToAdd.vinEmpaq = [NSString stringWithFormat:@"%i",vinEmpaq];
-            productToAdd.vinRegionID = [NSString stringWithFormat:@"%i",vinRegionID];
-            
-            productToAdd.vinNoDemande = vinNoDemande;
-            productToAdd.vinIDFournisseur = [NSString stringWithFormat:@"%i",vinIDFournisseur];
-            
-            productToAdd.vinDateAchat = vinDateAchat;
-            productToAdd.vinQteAchat = [NSString stringWithFormat:@"%i",vinQteAchat];
-            productToAdd.vinTotalAssigned = [NSString stringWithFormat:@"%i",vinTotalAssigned];
-            
-            productToAdd.vinFormat = vinFormat;
-            
-            productToAdd.vinPrixAchat = [NSString stringWithFormat:@"%f",vinPrixAchat];
-            productToAdd.vinFraisEtiq = [NSString stringWithFormat:@"%f",vinFraisEtiq];
-            productToAdd.vinFraisBout = [NSString stringWithFormat:@"%f",vinFraisBout];
-            productToAdd.vinFraisBoutPart = [NSString stringWithFormat:@"%f",vinFraisBoutPart];
-            productToAdd.vinPrixVente = [NSString stringWithFormat:@"%f",vinPrixVente];
-            
-            productToAdd.vinEpuise = [NSString stringWithFormat:@"%i",vinEpuise];
-            productToAdd.vinDisponible = [NSString stringWithFormat:@"%i",vinDisponible];
-            
-            [self.productArray addObject:productToAdd];
-            
-            
-            numberOfRows = numberOfRows + 1;
-            
-        }
-        sqlite3_finalize(statement);
-    }
-    
-    NSLog(@"Number of products : %i", numberOfRows);
-    
-    self.filteredProductsArray = [NSMutableArray arrayWithCapacity:[productArray count]];
-    
-    // Reload the table
-    [[self tableView] reloadData];
-    */
     
 }
 

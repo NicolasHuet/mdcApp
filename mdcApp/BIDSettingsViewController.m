@@ -40,6 +40,8 @@ NSData *jsonDataForModifiedReservations;
     NSString *versionMsg = @"Version de l'app Maitre de Chai : ";
     self.versionLabelCheck.text = [NSString stringWithFormat:@"%@ %@", versionMsg, versionNum];
     
+    appDelegate = [[UIApplication sharedApplication] delegate];
+    
     // Do any additional setup after loading the view.
 }
 
@@ -234,7 +236,7 @@ NSData *jsonDataForModifiedReservations;
     "clientTel2 TEXT, clientTel3 TEXT,clientFactContact TEXT, clientFactEmail TEXT, "
     "clientFactTel1 TEXT, clientTypeClntID INT, clientIDSAQ TEXT, clientActif INT, "
     "clientTypeLivrID INT,clientSuccLivr INT, clientTypeFact INT, clientFactMensuelle INT, "
-    "clientTitulaireID INT, clientLivrJourFixe TEXT, clientNoMembre TEXT, clientEnvoiFact INT "
+    "clientTitulaireID INT, clientTempTitulaireID INT, clientLivrJourFixe TEXT, clientNoMembre TEXT, clientEnvoiFact INT "
     ");";
     
     if (sqlite3_exec (database, [createSQL UTF8String],
@@ -498,6 +500,8 @@ NSData *jsonDataForModifiedReservations;
     [self.view addSubview:spinner];
     [spinner startAnimating];
     
+    appDelegate.clientsViewNeedsRefreshing = YES;
+    
     NSString * repID = appDelegate.currLoggedUser;
     
     char *errorMsg = nil;
@@ -529,8 +533,8 @@ NSData *jsonDataForModifiedReservations;
                                                            for (int i=0; i<[rows count]; i++) {
                                                                
                                                                char *update = "INSERT INTO Clients "
-                                                               "(clientID, clientName, clientAdr1, clientVille, clientProv, clientCodePostal, clientContact, clientTel1, clientTypeClntID, clientIDSAQ, clientTitulaireID, clientTypeLivrID, clientTypeFact, clientLivrJourFixe) "
-                                                               "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+                                                               "(clientID, clientName, clientAdr1, clientVille, clientProv, clientCodePostal, clientContact, clientTel1, clientTypeClntID, clientIDSAQ, clientTitulaireID, clientTempTitulaireID, clientTypeLivrID, clientTypeFact, clientLivrJourFixe) "
+                                                               "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
                                                                
                                                                sqlite3_stmt *stmt;
                                                                
@@ -567,6 +571,9 @@ NSData *jsonDataForModifiedReservations;
                                                                int clientTitulaireID;
                                                                clientTitulaireID = [[[rows objectAtIndex:i] objectForKey:@"clientTitulaireID"]intValue];
                                                                
+                                                               int clientTempTitulaireID;
+                                                               clientTempTitulaireID = [[[rows objectAtIndex:i] objectForKey:@"clientTempTitulaireID"]intValue];
+                                                               
                                                                int clientTypeLivrID;
                                                                clientTypeLivrID = [[[rows objectAtIndex:i] objectForKey:@"clientTypeLivrID"]intValue];
                                                                
@@ -601,9 +608,10 @@ NSData *jsonDataForModifiedReservations;
                                                                    sqlite3_bind_int(stmt, 9, typeClient);
                                                                    sqlite3_bind_text(stmt, 10, [clientIDSAQ UTF8String], -1, NULL);
                                                                    sqlite3_bind_int(stmt, 11, clientTitulaireID);
-                                                                   sqlite3_bind_int(stmt, 12, clientTypeLivrID);
-                                                                   sqlite3_bind_int(stmt, 13, clientTypeFact);
-                                                                   sqlite3_bind_text(stmt, 14, [clientJourLivr UTF8String], -1, NULL);
+                                                                   sqlite3_bind_int(stmt, 12, clientTempTitulaireID);
+                                                                   sqlite3_bind_int(stmt, 13, clientTypeLivrID);
+                                                                   sqlite3_bind_int(stmt, 14, clientTypeFact);
+                                                                   sqlite3_bind_text(stmt, 15, [clientJourLivr UTF8String], -1, NULL);
                                                                }
                                                                
                                                                /*
@@ -664,6 +672,8 @@ NSData *jsonDataForModifiedReservations;
     spinner.hidesWhenStopped = YES;
     [self.view addSubview:spinner];
     [spinner startAnimating];
+    
+    appDelegate.productsViewNeedsRefreshing = YES;
     
     char *errorMsg = nil;
     

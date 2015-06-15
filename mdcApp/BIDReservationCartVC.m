@@ -513,6 +513,9 @@ double varTotal;
     [[self tableView] reloadData];
 }
 
+
+
+
 - (NSString *)dataFilePath
 {
     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
@@ -856,6 +859,8 @@ double varTotal;
 
 - (NSString *)saveOrder:(NSString *) orderStatus {
     
+    appDelegate.reservationsViewNeedsRefreshing = YES;
+    
     NSString * clientID;
     NSString * clientName;
     int clientTypeClntID;
@@ -1119,6 +1124,7 @@ double varTotal;
 
 - (void)saveOrderItem:(NSString *)orderID prodID:(NSString *)prodID qty:(NSString *)qty {
     char *errorMsg = nil;
+    appDelegate.reservationsViewNeedsRefreshing = YES;
     
     char *update;
     if([self.selectedOrder.commDataSource isEqual:@"backend"]){
@@ -1157,12 +1163,29 @@ double varTotal;
     sqlite3_finalize(stmt);
 }
 
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    if (indexPath.section == 2) {
+        static NSString *CellIdentifier = @"itemCell";
+        UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
+        if ([cell.reuseIdentifier isEqualToString:CellIdentifier])
+        {
+            [self performSegueWithIdentifier:@"toProdEdit" sender:cell];
+        }
+    }
+    
+}
+
 - (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
     
-    if((self.selectedOrder != nil) && (![self.selectedOrder.commStatutID isEqual: @"6"])) {
-        return NO;
+    if (indexPath.section == 2) {
+        if((self.selectedOrder != nil) && (![self.selectedOrder.commStatutID isEqual: @"6"])) {
+            return NO;
+        } else {
+            return YES;
+        }
     } else {
-        return YES;
+        return NO;
     }
 }
 
@@ -1217,6 +1240,22 @@ double varTotal;
         BIDSelectProductTableVC *productSelectViewController = segue.destinationViewController;
         productSelectViewController.pickupSource = @"Reservation";
         
+    }
+    
+    if ([segue.identifier isEqualToString:@"toProdEdit"])
+    {
+        Product *product = nil;
+        
+        
+        NSIndexPath *indexPath = [self.tableView indexPathForCell:sender];
+        product = [appDelegate.reservProducts objectAtIndex:indexPath.row];
+        
+        BIDProdDetailsViewController *prodDetailsViewController = segue.destinationViewController;
+        prodDetailsViewController.isInEditMode = YES;
+        prodDetailsViewController.product = product;
+        prodDetailsViewController.currProductQty = [[appDelegate.reservQties objectAtIndex:indexPath.row] intValue];
+        prodDetailsViewController.cartArrayIndex = indexPath.row;
+        prodDetailsViewController.pickupSource = @"Reservation";
     }
     
 }

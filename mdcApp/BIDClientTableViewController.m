@@ -34,13 +34,36 @@ sqlite3 *database;
     CGRect newBounds = self.tableView.bounds;
     newBounds.origin.y = newBounds.origin.y + clientSearchBar.bounds.size.height;
     self.tableView.bounds = newBounds;
-    self.clientArray = [[NSMutableArray alloc] init];
+    
     appDelegate = [[UIApplication sharedApplication] delegate];
     NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
     appDelegate.currLoggedUser = [userDefaults objectForKey:@"UserCode"];
     appDelegate.currLoggedUserRole = [userDefaults objectForKey:@"UserRole"];
     appDelegate.syncServer = [userDefaults objectForKey:@"SrvAddr"];
-    int numberOfRows = 0;
+
+    [self reloadViewFromDatabase];
+    appDelegate.clientsViewNeedsRefreshing = NO;
+    
+    appDelegate = [[UIApplication sharedApplication] delegate];
+    self.tableView.rowHeight = 124;
+    self.clearsSelectionOnViewWillAppear = NO;
+    
+    // Reload the table
+    [[self tableView] reloadData];
+}
+-(void) viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:YES];
+    
+    if(appDelegate.clientsViewNeedsRefreshing == YES){
+        [self reloadViewFromDatabase];
+        appDelegate.clientsViewNeedsRefreshing = NO;
+    }
+    
+    [[self tableView] reloadData];
+}
+
+- (void) reloadViewFromDatabase {
+    self.clientArray = [[NSMutableArray alloc] init];
     if (sqlite3_open([[self dataFilePath] UTF8String], &database)
         != SQLITE_OK) {
         sqlite3_close(database);
@@ -50,7 +73,7 @@ sqlite3 *database;
     if([appDelegate.currLoggedUserRole isEqual: @"admin"]){
         query = [NSString stringWithFormat:@"SELECT * FROM Clients"];
     } else {
-        query = [NSString stringWithFormat:@"SELECT * FROM Clients WHERE clientTitulaireID = %@",appDelegate.currLoggedUser];
+        query = [NSString stringWithFormat:@"SELECT * FROM Clients WHERE clientTitulaireID = %@ OR clientTempTitulaireID = %@",appDelegate.currLoggedUser,appDelegate.currLoggedUser];
     }
     sqlite3_stmt *statement;
     if (sqlite3_prepare_v2(database, [query UTF8String],
@@ -163,25 +186,13 @@ sqlite3 *database;
             clientToAdd.clientTypeFact = clientTypeFact;
             clientToAdd.clientJourLivr = clientJourLivr;
             [self.clientArray addObject:clientToAdd];
-            numberOfRows = numberOfRows + 1;
         }
         sqlite3_finalize(statement);
     }
-    NSLog(@"Number of clients : %i", numberOfRows);
-    appDelegate = [[UIApplication sharedApplication] delegate];
-    //[self.tableView setSeparatorStyle:UITableViewCellSeparatorStyleNone];
-    self.tableView.rowHeight = 124;
-    self.clearsSelectionOnViewWillAppear = NO;
-    //UIEdgeInsets inset = UIEdgeInsetsMake(5, 0, 0, 0);
-    //self.tableView.contentInset = inset;
+    
     self.filteredClientArray = [NSMutableArray arrayWithCapacity:[clientArray count]];
-    // Reload the table
-    [[self tableView] reloadData];
 }
--(void) viewWillAppear:(BOOL)animated {
-    [super viewWillAppear:YES];
-    [[self tableView] reloadData];
-}
+
 - (void)didReceiveMemoryWarning
 {
     [super didReceiveMemoryWarning];

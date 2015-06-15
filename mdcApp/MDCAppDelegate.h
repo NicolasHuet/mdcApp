@@ -41,6 +41,11 @@
 
 @property (strong, nonatomic) Client *reservationActiveClient;
 
+@property (nonatomic) Boolean clientsViewNeedsRefreshing;
+@property (nonatomic) Boolean productsViewNeedsRefreshing;
 @property (nonatomic) Boolean ordersViewNeedsRefreshing;
+@property (nonatomic) Boolean reservationsViewNeedsRefreshing;
+@property (nonatomic) Boolean cartViewNeedsRefreshing;
+
 
 @end

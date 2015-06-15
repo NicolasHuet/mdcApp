@@ -129,7 +129,7 @@ MDCAppDelegate *appDelegate;
         "clientTel2 TEXT, clientTel3 TEXT,clientFactContact TEXT, clientFactEmail TEXT, "
         "clientFactTel1 TEXT, clientTypeClntID INT, clientIDSAQ TEXT, clientActif INT, "
         "clientTypeLivrID INT,clientSuccLivr INT, clientTypeFact INT, clientFactMensuelle INT, "
-        "clientTitulaireID INT, clientLivrJourFixe TEXT, clientNoMembre TEXT, clientEnvoiFact INT "
+        "clientTitulaireID INT, clientTempTitulaireID INT, clientLivrJourFixe TEXT, clientNoMembre TEXT, clientEnvoiFact INT "
         ");";
     
     if (sqlite3_exec (database, [createSQL UTF8String],
@@ -321,8 +321,8 @@ MDCAppDelegate *appDelegate;
                                                            for (int i=0; i<[rows count]; i++) {
                                                                
                                                                char *update = "INSERT INTO Clients "
-                                                               "(clientID, clientName, clientAdr1, clientVille, clientProv, clientCodePostal, clientContact, clientTel1, clientTypeClntID, clientTitulaireID, clientTypeLivrID, clientTypeFact, clientLivrJourFixe) "
-                                                               "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+                                                               "(clientID, clientName, clientAdr1, clientVille, clientProv, clientCodePostal, clientContact, clientTel1, clientTypeClntID, clientTitulaireID, clientTempTitulaireID, clientTypeLivrID, clientTypeFact, clientLivrJourFixe) "
+                                                               "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
                                                                
                                                                sqlite3_stmt *stmt;
                                                                
@@ -355,6 +355,9 @@ MDCAppDelegate *appDelegate;
                                                                
                                                                NSInteger clientTitulaireID;
                                                                clientTitulaireID = [[[rows objectAtIndex:i] objectForKey:@"clientTitulaireID"]intValue];
+                                                               
+                                                               NSInteger clientTempTitulaireID;
+                                                               clientTempTitulaireID = [[[rows objectAtIndex:i] objectForKey:@"clientTempTitulaireID"]intValue];
                                                                
                                                                NSInteger clientTypeLivrID;
                                                                clientTypeLivrID = [[[rows objectAtIndex:i] objectForKey:@"clientTypeLivrID"]intValue];
@@ -389,9 +392,10 @@ MDCAppDelegate *appDelegate;
                                                                    sqlite3_bind_text(stmt, 8, [clientTel1 UTF8String], -1, NULL);
                                                                    sqlite3_bind_int(stmt, 9, typeClient);
                                                                    sqlite3_bind_int(stmt, 10, clientTitulaireID);
-                                                                   sqlite3_bind_int(stmt, 11, clientTypeLivrID);
-                                                                   sqlite3_bind_int(stmt, 12, clientTypeFact);
-                                                                   sqlite3_bind_text(stmt, 13, [clientJourLivr UTF8String], -1, NULL);
+                                                                   sqlite3_bind_int(stmt, 11, clientTempTitulaireID);
+                                                                   sqlite3_bind_int(stmt, 12, clientTypeLivrID);
+                                                                   sqlite3_bind_int(stmt, 13, clientTypeFact);
+                                                                   sqlite3_bind_text(stmt, 14, [clientJourLivr UTF8String], -1, NULL);
                                                                }
                                                                
                                                                /*

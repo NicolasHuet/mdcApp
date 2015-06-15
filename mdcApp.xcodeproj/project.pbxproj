@@ -71,6 +71,11 @@
 		8E8CE03D18C0F110007330E1 /* checkout(128).png in Resources */ = {isa = PBXBuildFile; fileRef = 8E8CE03C18C0F110007330E1 /* checkout(128).png */; };
 		8E9CBCBE19AAE01900C90102 /* settings(32).png in Resources */ = {isa = PBXBuildFile; fileRef = 8E9CBCBD19AAE01900C90102 /* settings(32).png */; };
 		8E9CBCC119AAE09900C90102 /* BIDSettingsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 8E9CBCC019AAE09900C90102 /* BIDSettingsViewController.m */; };
+		8E9E02111B2BDC7500511202 /* saveChange.png in Resources */ = {isa = PBXBuildFile; fileRef = 8E9E02101B2BDC7500511202 /* saveChange.png */; };
+		8E9E02131B2E680F00511202 /* subTotalLine.png in Resources */ = {isa = PBXBuildFile; fileRef = 8E9E02121B2E680F00511202 /* subTotalLine.png */; };
+		8E9E02151B2E691C00511202 /* saq.png in Resources */ = {isa = PBXBuildFile; fileRef = 8E9E02141B2E691C00511202 /* saq.png */; };
+		8E9E02171B2E695900511202 /* logoMDC.png in Resources */ = {isa = PBXBuildFile; fileRef = 8E9E02161B2E695900511202 /* logoMDC.png */; };
+		8E9E021A1B2E91AD00511202 /* MDCReservationCellTableViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 8E9E02191B2E91AD00511202 /* MDCReservationCellTableViewCell.m */; };
 		8EDB23CC1A9476380065C3DE /* Cart32.png in Resources */ = {isa = PBXBuildFile; fileRef = 8EDB23CB1A9476380065C3DE /* Cart32.png */; };
 		8EF099BA19C29EB30070E5CC /* BIDOrderDetailTableVC.m in Sources */ = {isa = PBXBuildFile; fileRef = 8EF099B919C29EB30070E5CC /* BIDOrderDetailTableVC.m */; };
 		8EF099BD19C6ABDD0070E5CC /* BIDSelectClientTableVC.m in Sources */ = {isa = PBXBuildFile; fileRef = 8EF099BC19C6ABDD0070E5CC /* BIDSelectClientTableVC.m */; };
@@ -170,6 +175,12 @@
 		8E9CBCBD19AAE01900C90102 /* settings(32).png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "settings(32).png"; sourceTree = "<group>"; };
 		8E9CBCBF19AAE09900C90102 /* BIDSettingsViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BIDSettingsViewController.h; sourceTree = "<group>"; };
 		8E9CBCC019AAE09900C90102 /* BIDSettingsViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BIDSettingsViewController.m; sourceTree = "<group>"; };
+		8E9E02101B2BDC7500511202 /* saveChange.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = saveChange.png; sourceTree = "<group>"; };
+		8E9E02121B2E680F00511202 /* subTotalLine.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = subTotalLine.png; sourceTree = "<group>"; };
+		8E9E02141B2E691C00511202 /* saq.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = saq.png; sourceTree = "<group>"; };
+		8E9E02161B2E695900511202 /* logoMDC.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = logoMDC.png; path = Images.xcassets/AppIcon.appiconset/logoMDC.png; sourceTree = "<group>"; };
+		8E9E02181B2E91AD00511202 /* MDCReservationCellTableViewCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MDCReservationCellTableViewCell.h; sourceTree = "<group>"; };
+		8E9E02191B2E91AD00511202 /* MDCReservationCellTableViewCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MDCReservationCellTableViewCell.m; sourceTree = "<group>"; };
 		8EDB23CB1A9476380065C3DE /* Cart32.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Cart32.png; sourceTree = "<group>"; };
 		8EF099B819C29EB30070E5CC /* BIDOrderDetailTableVC.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BIDOrderDetailTableVC.h; sourceTree = "<group>"; };
 		8EF099B919C29EB30070E5CC /* BIDOrderDetailTableVC.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BIDOrderDetailTableVC.m; sourceTree = "<group>"; };
@@ -368,6 +379,8 @@
 				8E2B178E1B0DD1D100E01AA3 /* BIDReservationsVC.m */,
 				8E6B545B1B12D447006F5B87 /* BIDReservationCartVC.h */,
 				8E6B545C1B12D447006F5B87 /* BIDReservationCartVC.m */,
+				8E9E02181B2E91AD00511202 /* MDCReservationCellTableViewCell.h */,
+				8E9E02191B2E91AD00511202 /* MDCReservationCellTableViewCell.m */,
 			);
 			name = UIClasses;
 			sourceTree = "<group>";
@@ -393,6 +406,7 @@
 				8E8CE02418C0DD75007330E1 /* price_tag_usd(128).png */,
 				8E8CE03018C0E2CC007330E1 /* rack(128).png */,
 				8E8CE02618C0DD8C007330E1 /* Receiving(128).png */,
+				8E9E02101B2BDC7500511202 /* saveChange.png */,
 				8E8CE02E18C0E28C007330E1 /* shopCartAdd(128).png */,
 				8E8CE03518C0E65A007330E1 /* updated(128).png */,
 				8E8CE02C18C0E046007330E1 /* volume(128).png */,
@@ -414,15 +428,18 @@
 		8E8CE03B18C0F0F6007330E1 /* CartView */ = {
 			isa = PBXGroup;
 			children = (
-				8E79961A1A436D75001A195E /* cart128.png */,
-				8E2B17901B0E133E00E01AA3 /* Review.png */,
-				8E2B17911B0E133E00E01AA3 /* Draft.png */,
 				8E7996141A436C2A001A195E /* cancel.png */,
-				8E79961C1A437406001A195E /* wineAdd3.png */,
-				8E7996121A4367BB001A195E /* userCard.png */,
+				8E79961A1A436D75001A195E /* cart128.png */,
+				8E8CE03C18C0F110007330E1 /* checkout(128).png */,
+				8E2B17911B0E133E00E01AA3 /* Draft.png */,
+				8E9E02161B2E695900511202 /* logoMDC.png */,
+				8E2B17901B0E133E00E01AA3 /* Review.png */,
+				8E9E02141B2E691C00511202 /* saq.png */,
 				8E5E08581A1016150066E3E7 /* shoppingAdd.png */,
 				8E5E08591A1016150066E3E7 /* shoppingCancel.png */,
-				8E8CE03C18C0F110007330E1 /* checkout(128).png */,
+				8E9E02121B2E680F00511202 /* subTotalLine.png */,
+				8E7996121A4367BB001A195E /* userCard.png */,
+				8E79961C1A437406001A195E /* wineAdd3.png */,
 			);
 			name = CartView;
 			sourceTree = "<group>";
@@ -507,7 +524,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8E9E02151B2E691C00511202 /* saq.png in Resources */,
 				8E3867A01938785400626F0B /* calendar.png in Resources */,
+				8E9E02111B2BDC7500511202 /* saveChange.png in Resources */,
 				8E8CDFE618C058F0007330E1 /* Images.xcassets in Resources */,
 				8E8CE03618C0E65A007330E1 /* updated(128).png in Resources */,
 				8E38679819381AE900626F0B /* plusSign.png in Resources */,
@@ -527,6 +546,7 @@
 				8EDB23CC1A9476380065C3DE /* Cart32.png in Resources */,
 				8E38679719381AE900626F0B /* minusSign.png in Resources */,
 				8E8CE02918C0DEE2007330E1 /* world(128).png in Resources */,
+				8E9E02131B2E680F00511202 /* subTotalLine.png in Resources */,
 				8E8CE00718C05A12007330E1 /* shopCartLoaded(32).png in Resources */,
 				8E8CE00518C059C3007330E1 /* user_male3-32.png in Resources */,
 				8E3867A21938804E00626F0B /* Settings.bundle in Resources */,
@@ -542,6 +562,7 @@
 				8E6F80FA1A09EED60030124E /* localItem.png in Resources */,
 				8E442F5719BEAC9700126B87 /* hotel.png in Resources */,
 				8E8CE00918C05AE7007330E1 /* PurchaseOrder(32).png in Resources */,
+				8E9E02171B2E695900511202 /* logoMDC.png in Resources */,
 				8E79961D1A437406001A195E /* wineAdd3.png in Resources */,
 				8E8CE03D18C0F110007330E1 /* checkout(128).png in Resources */,
 				8E2B17931B0E133E00E01AA3 /* Draft.png in Resources */,
@@ -584,6 +605,7 @@
 				8E8CE01218C0600B007330E1 /* Product.m in Sources */,
 				8E8CDFDE18C058F0007330E1 /* MDCAppDelegate.m in Sources */,
 				8E8CE01118C0600B007330E1 /* Client.m in Sources */,
+				8E9E021A1B2E91AD00511202 /* MDCReservationCellTableViewCell.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

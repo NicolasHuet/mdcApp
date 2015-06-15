@@ -8,28 +8,30 @@
 
 #import "BIDCartViewController.h"
 
-@interface BIDCartViewController ()
-
-@end
-
 NSMutableArray *itemImageFiles;
 NSMutableArray *itemDetails;
 NSMutableArray *itemQties;
 NSMutableArray *itemFraisTimbrage;
 NSMutableArray *itemFraisConsult;
-NSMutableArray *itemSubTotal;
-NSMutableArray *itemPrixUnitaire;
+NSMutableArray *itemFraisConsultPart;
+NSMutableArray *itemPrixResto;
+NSMutableArray *itemPrixPart;
+NSMutableArray *itemSubTotalResto;
+NSMutableArray *itemSubTotalPart;
 
 Client *currentClient;
 NSString *currentTypeLivr;
 NSString *currentCommentaire;
 NSString *currentDelaiPickup;
+NSString *currentClientType;
 NSMutableArray *productList;
 MDCAppDelegate *appDelegate;
 
 sqlite3 *database;
 
 double varSubTotal;
+double varTotalHon;
+double varTotalSAQ;
 double varTotal;
 
 @implementation BIDCartViewController
@@ -80,17 +82,116 @@ double varTotal;
 }
 
 
-- (void)viewDidLoad
-{
+- (void)viewDidLoad {
     [super viewDidLoad];
     
+    self.navigationItem.hidesBackButton = YES;
+    
+    appDelegate = [[UIApplication sharedApplication] delegate];
+    
+    appDelegate.cartViewNeedsRefreshing = NO;
+    
+    appDelegate.cartTypeLivr = @"2";
+    
+    [self reloadViewFromDB];
+
+    [[self tableView] reloadData];
+
+    
+}
+
+-(void) viewWillAppear:(BOOL)animated
+{
+    varSubTotal = 0;
+    varTotal = 0;
+    varTotalHon = 0;
+    varTotalSAQ = 0;
+    
+    itemImageFiles = [[NSMutableArray array] init];
+    itemDetails = [[NSMutableArray array] init];
+    itemQties = [[NSMutableArray array] init];
+    itemFraisTimbrage = [[NSMutableArray array] init];
+    itemFraisConsult = [[NSMutableArray array] init];
+    itemFraisConsultPart = [[NSMutableArray array] init];
+    itemPrixResto = [[NSMutableArray array] init];
+    itemPrixPart = [[NSMutableArray array] init];
+    itemSubTotalResto = [[NSMutableArray array] init];
+    itemSubTotalPart = [[NSMutableArray array] init];
+    
+    MDCAppDelegate *appDelegate = [[UIApplication sharedApplication] delegate];
+    NSMutableArray *productList = appDelegate.cartProducts;
+    currentClient = appDelegate.sessionActiveClient;
+    currentTypeLivr = appDelegate.cartTypeLivr;
+    currentDelaiPickup = appDelegate.cartDelaiPickup;
+    currentCommentaire = appDelegate.cartCommentaire;
+    
+    NSUInteger arraySize = [productList count];
+    
+    for(int i = 0; i < arraySize; i++){
+        Product *currProduct = nil;
+        currProduct = [appDelegate.cartProducts objectAtIndex:i];
+        NSString *currQty = [appDelegate.cartQties objectAtIndex:i];
+        
+        if([currProduct.vinCouleurID  isEqual: @"3" ]){
+            [itemImageFiles addObject:@"wineRose(128)"];
+        } else if([currProduct.vinCouleurID  isEqual: @"2"] ){
+            [itemImageFiles addObject:@"wineWhite(128)"];
+        } else {
+            [itemImageFiles addObject:@"wineRed(128)"];
+        }
+        
+        [itemDetails addObject:currProduct.vinNom];
+        [itemQties addObject:currQty];
+        
+        
+        double tmpFraisTimbr = [currProduct.vinFraisEtiq doubleValue];
+        [itemFraisTimbrage addObject:[NSString stringWithFormat:@"%.2f", tmpFraisTimbr]];
+        
+        double tmpFraisConsult = [currProduct.vinFraisBout doubleValue];
+        [itemFraisConsult addObject:[NSString stringWithFormat:@"%.2f", tmpFraisConsult]];
+        
+        double tmpFraisConsultPart = [currProduct.vinFraisBoutPart doubleValue];
+        [itemFraisConsultPart addObject:[NSString stringWithFormat:@"%.2f", tmpFraisConsultPart]];
+        
+        double tmpCalcResto = [currProduct.vinPrixAchat doubleValue] + [currProduct.vinFraisEtiq doubleValue];
+        [itemPrixResto addObject:[NSString stringWithFormat:@"%.2f", tmpCalcResto]];
+        
+        double tmpCalcPart = [currProduct.vinPrixAchat doubleValue];
+        [itemPrixPart addObject:[NSString stringWithFormat:@"%.2f", tmpCalcPart]];
+        
+        double qtyTmp = [[appDelegate.cartQties objectAtIndex:i] doubleValue];
+        double subTotalResto = qtyTmp * (tmpCalcResto + tmpFraisConsult);
+        double subTotalPart = qtyTmp * (tmpCalcPart + tmpFraisConsultPart);
+        
+        NSString *tmpSubTotalResto = [NSString stringWithFormat:@"%.2f $", subTotalResto];
+        [itemSubTotalResto addObject:tmpSubTotalResto];
+        
+        NSString *tmpSubTotalPart = [NSString stringWithFormat:@"%.2f $", subTotalPart];
+        [itemSubTotalPart addObject:tmpSubTotalPart];
+        
+        
+        if(([appDelegate.sessionActiveClient.clientType isEqual:@"Particulier"]) || ([appDelegate.sessionActiveClient.clientType isEqual:@"Particulier avec SAQ"])){
+            varTotalHon = varTotalHon + (qtyTmp * tmpFraisConsultPart);
+            varTotalSAQ = varTotalSAQ + (qtyTmp * tmpCalcPart);
+            varSubTotal = varSubTotal + subTotalPart;
+        } else {
+            varTotalHon = varTotalHon + (qtyTmp * tmpFraisConsult);
+            varTotalSAQ = varTotalSAQ + (qtyTmp * tmpCalcResto);
+            varSubTotal = varSubTotal + subTotalResto;
+        }
+        
+        varTotal = varSubTotal;
+    }
+
+    [[self tableView] reloadData];
+}
+
+- (void)reloadViewFromDB {
     if (sqlite3_open([[self dataFilePath] UTF8String], &database)
         != SQLITE_OK) {
         sqlite3_close(database);
         NSAssert(0, @"Failed to open database");
     }
-    
-    self.navigationItem.hidesBackButton = YES;
     
     varSubTotal = 0;
     varTotal = 0;
@@ -100,12 +201,11 @@ double varTotal;
     itemQties = [[NSMutableArray array] init];
     itemFraisTimbrage = [[NSMutableArray array] init];
     itemFraisConsult = [[NSMutableArray array] init];
-    itemSubTotal = [[NSMutableArray array] init];
-    itemPrixUnitaire = [[NSMutableArray array] init];
-    
-    appDelegate = [[UIApplication sharedApplication] delegate];
-    
-    appDelegate.cartTypeLivr = @"2";
+    itemFraisConsultPart = [[NSMutableArray array] init];
+    itemPrixResto = [[NSMutableArray array] init];
+    itemPrixPart = [[NSMutableArray array] init];
+    itemSubTotalResto = [[NSMutableArray array] init];
+    itemSubTotalPart = [[NSMutableArray array] init];
     
     
     if(self.selectedOrder != nil) {
@@ -207,14 +307,19 @@ double varTotal;
                 columnIntValue = (int)sqlite3_column_int(statement, 16);
                 if(columnIntValue == 1){
                     clientType = @"Hotel";
+                    currentClientType = @"Resto";
                 } else if(columnIntValue == 2){
                     clientType = @"Particulier";
+                    currentClientType = @"Part";
                 } else if(columnIntValue == 3){
                     clientType = @"Resto sans SAQ";
+                    currentClientType = @"Resto";
                 } else if(columnIntValue == 4){
                     clientType = @"Resto avec SAQ";
+                    currentClientType = @"Resto";
                 } else {
                     clientType = @"Particulier sans SAQ";
+                    currentClientType = @"Part";
                 }
                 
                 Client *clientToAdd = [[Client alloc] init];
@@ -247,7 +352,6 @@ double varTotal;
                                -1, &statement, nil) == SQLITE_OK)
         {
             
-            
             //char *columnData;
             int columnIntValue;
             NSString *vinID;
@@ -275,7 +379,7 @@ double varTotal;
                 orderItemToAdd.vinID = vinID;
                 orderItemToAdd.vinQte = vinQte;
                 orderItemToAdd.vinOverideFrais = @"0.00";
-
+                
                 [orderItemsArray addObject:orderItemToAdd];
                 
             }
@@ -439,10 +543,8 @@ double varTotal;
             }
         }
         
-        
         appDelegate.cartProducts = orderProductsArray;
         appDelegate.cartQties = orderQtiesArray;
-        
         
     }
     
@@ -477,95 +579,41 @@ double varTotal;
         double tmpFraisConsult = [currProduct.vinFraisBout doubleValue];
         [itemFraisConsult addObject:[NSString stringWithFormat:@"%.2f", tmpFraisConsult]];
         
-        double tmpCalc = [currProduct.vinPrixAchat doubleValue] + [currProduct.vinFraisEtiq doubleValue] + [currProduct.vinFraisBout doubleValue];
+        double tmpFraisConsultPart = [currProduct.vinFraisBoutPart doubleValue];
+        [itemFraisConsultPart addObject:[NSString stringWithFormat:@"%.2f", tmpFraisConsultPart]];
         
+        double tmpCalcResto = [currProduct.vinPrixAchat doubleValue] + [currProduct.vinFraisEtiq doubleValue];
+        [itemPrixResto addObject:[NSString stringWithFormat:@"%.2f", tmpCalcResto]];
         
-        [itemPrixUnitaire addObject:[NSString stringWithFormat:@"%.2f", tmpCalc]];
+        double tmpCalcPart = [currProduct.vinPrixAchat doubleValue];
+        [itemPrixPart addObject:[NSString stringWithFormat:@"%.2f", tmpCalcPart]];
         
         double qtyTmp = [[appDelegate.cartQties objectAtIndex:i] doubleValue];
-        double unitPriceTmp = tmpCalc;
-        double subTotalTmp = qtyTmp * unitPriceTmp;
+        double subTotalResto = qtyTmp * (tmpCalcResto + tmpFraisConsult);
+        double subTotalPart = qtyTmp * (tmpCalcPart + tmpFraisConsultPart);
         
-        NSString *tmpSubTotal = [NSString stringWithFormat:@"%.2f $", subTotalTmp];
-        [itemSubTotal addObject:tmpSubTotal];
+        NSString *tmpSubTotalResto = [NSString stringWithFormat:@"%.2f $", subTotalResto];
+        [itemSubTotalResto addObject:tmpSubTotalResto];
         
-        varSubTotal = varSubTotal + subTotalTmp;
-        varTotal = varSubTotal;
+        NSString *tmpSubTotalPart = [NSString stringWithFormat:@"%.2f $", subTotalPart];
+        [itemSubTotalPart addObject:tmpSubTotalPart];
         
-    }
-    //NSLog(@"Testing...");
-    
-    sqlite3_close(database);
-    [[self tableView] reloadData];
-
-    
-}
-
--(void) viewWillAppear:(BOOL)animated
-{
-    //[super viewWillAppear:animated];
-    
-    //self.deliveryTypeField.text = @"Livraison";
-    
-    varSubTotal = 0;
-    varTotal = 0;
-    
-    itemImageFiles = [[NSMutableArray array] init];
-    itemDetails = [[NSMutableArray array] init];
-    itemQties = [[NSMutableArray array] init];
-    itemFraisTimbrage = [[NSMutableArray array] init];
-    itemFraisConsult = [[NSMutableArray array] init];
-    itemSubTotal = [[NSMutableArray array] init];
-    itemPrixUnitaire = [[NSMutableArray array] init];
-    
-    MDCAppDelegate *appDelegate = [[UIApplication sharedApplication] delegate];
-    NSMutableArray *productList = appDelegate.cartProducts;
-    currentClient = appDelegate.sessionActiveClient;
-    currentTypeLivr = appDelegate.cartTypeLivr;
-    currentDelaiPickup = appDelegate.cartDelaiPickup;
-    currentCommentaire = appDelegate.cartCommentaire;
-    
-    NSUInteger arraySize = [productList count];
-    
-    for(int i = 0; i < arraySize; i++){
-        Product *currProduct = nil;
-        currProduct = [appDelegate.cartProducts objectAtIndex:i];
-        NSString *currQty = [appDelegate.cartQties objectAtIndex:i];
         
-        if([currProduct.vinCouleurID  isEqual: @"3" ]){
-            [itemImageFiles addObject:@"wineRose(128)"];
-        } else if([currProduct.vinCouleurID  isEqual: @"2"] ){
-            [itemImageFiles addObject:@"wineWhite(128)"];
+        if(([appDelegate.sessionActiveClient.clientType isEqual:@"Particulier"]) || ([appDelegate.sessionActiveClient.clientType isEqual:@"Particulier avec SAQ"])){
+            varTotalHon = varTotalHon + (qtyTmp * tmpFraisConsultPart);
+            varTotalSAQ = varTotalSAQ + (qtyTmp * tmpCalcPart);
+            varSubTotal = varSubTotal + subTotalPart;
         } else {
-            [itemImageFiles addObject:@"wineRed(128)"];
+            varTotalHon = varTotalHon + (qtyTmp * tmpFraisConsult);
+            varTotalSAQ = varTotalSAQ + (qtyTmp * tmpCalcResto);
+            varSubTotal = varSubTotal + subTotalResto;            
         }
         
-        [itemDetails addObject:currProduct.vinNom];
-        [itemQties addObject:currQty];
-        
-        double tmpFraisTimbr = [currProduct.vinFraisEtiq doubleValue];
-        [itemFraisTimbrage addObject:[NSString stringWithFormat:@"%.2f", tmpFraisTimbr]];
-        
-        double tmpFraisConsult = [currProduct.vinFraisBout doubleValue];
-        [itemFraisConsult addObject:[NSString stringWithFormat:@"%.2f", tmpFraisConsult]];
-        
-        double tmpCalc = [currProduct.vinPrixAchat doubleValue] + [currProduct.vinFraisEtiq doubleValue] + [currProduct.vinFraisBout doubleValue];
-        
-        [itemPrixUnitaire addObject:[NSString stringWithFormat:@"%.2f", tmpCalc]];
-        
-        double qtyTmp = [[appDelegate.cartQties objectAtIndex:i] doubleValue];
-        double unitPriceTmp = tmpCalc;
-        double subTotalTmp = qtyTmp * unitPriceTmp;
-        
-        NSString *tmpSubTotal = [NSString stringWithFormat:@"%.2f $", subTotalTmp];
-        [itemSubTotal addObject:tmpSubTotal];
-        
-        varSubTotal = varSubTotal + subTotalTmp;
         varTotal = varSubTotal;
         
     }
-    //NSLog(@"Testing...");
-    [[self tableView] reloadData];
+    
+    sqlite3_close(database);
 }
 
 - (NSString *)dataFilePath
@@ -639,6 +687,23 @@ double varTotal;
             UILabel *clientTelLabel = (UILabel *)[cell viewWithTag:112];
             clientTelLabel.text = currentClient.telephone;
         }
+        
+        UIImageView *clientImageView = (UIImageView *)[cell viewWithTag:113];
+        if([currentClient.clientType  isEqual: @"Hotel"]){
+            clientImageView.image = [UIImage imageNamed:@"hotel"];
+        } else if([currentClient.clientType  isEqual: @"Particulier"]){
+            clientImageView.image = [UIImage imageNamed:@"particulier"];
+        } else if([currentClient.clientType  isEqual: @"Particulier sans SAQ"]){
+            clientImageView.image = [UIImage imageNamed:@"particulier"];
+        } else {
+            clientImageView.image = [UIImage imageNamed:@"restaurant"];
+        }
+        if(currentClient == nil){
+            clientImageView.hidden = YES;
+        } else {
+            clientImageView.hidden = NO;
+        }
+        
     }
     if([indexPath section] == 1){
         static NSString *CellIdentifier = @"subtotalCell";
@@ -701,8 +766,12 @@ double varTotal;
             [commCommentaire setDelegate:self];
         }
         
+        UILabel *totalHonLabel = (UILabel *)[cell viewWithTag:215];
+        UILabel *totalLabelSAQ = (UILabel *)[cell viewWithTag:214];
+        UILabel *totalLabel = (UILabel *)[cell viewWithTag:213];
         
-        UILabel *totalLabel = (UILabel *)[cell viewWithTag:113];
+        totalHonLabel.text = [NSString stringWithFormat:@"$%.2f",varTotalHon];
+        totalLabelSAQ.text = [NSString stringWithFormat:@"$%.2f",varTotalSAQ];
         totalLabel.text = [NSString stringWithFormat:@"$%.2f",varTotal];
         
         UILabel *typeLivrLabel = (UILabel *)[cell viewWithTag:202];
@@ -753,12 +822,8 @@ double varTotal;
         [userNameToolbar sizeToFit];
         commCommentaire.inputAccessoryView = userNameToolbar;
         
-        
-        
-        
-        
-        
     }
+    
     if([indexPath section] == 2){
         static NSString *CellIdentifier = @"itemCell";
         cell = [self.tableView dequeueReusableCellWithIdentifier:CellIdentifier];
@@ -778,7 +843,7 @@ double varTotal;
         productQtyLabel.text = [itemQties objectAtIndex:[indexPath row]];
         
         UILabel *productUnitPriceLabel = (UILabel *)[cell viewWithTag:103];
-        productUnitPriceLabel.text = [itemPrixUnitaire objectAtIndex:[indexPath row]];
+        productUnitPriceLabel.text = [itemPrixResto objectAtIndex:[indexPath row]];
         
         UILabel *productFraisTimbrLabel = (UILabel *)[cell viewWithTag:105];
         productFraisTimbrLabel.text = [itemFraisTimbrage objectAtIndex:[indexPath row]];
@@ -786,8 +851,17 @@ double varTotal;
         UILabel *productFraisConsultLabel = (UILabel *)[cell viewWithTag:106];
         productFraisConsultLabel.text = [itemFraisConsult objectAtIndex:[indexPath row]];
         
+        UILabel *productFraisConsultPartLabel = (UILabel *)[cell viewWithTag:107];
+        productFraisConsultPartLabel.text = [itemFraisConsultPart objectAtIndex:[indexPath row]];
+        
         UILabel *productSTLabel = (UILabel *)[cell viewWithTag:104];
-        productSTLabel.text = [itemSubTotal objectAtIndex:[indexPath row]];
+        
+        if([currentClientType  isEqual: @"Part"]){
+            productSTLabel.text = [itemSubTotalPart objectAtIndex:[indexPath row]];
+        } else {
+            productSTLabel.text = [itemSubTotalResto objectAtIndex:[indexPath row]];
+        }
+        
     }
     
     return cell;
@@ -803,7 +877,7 @@ double varTotal;
     } else if(indexPath.section == 2){
         rowSize = 140;
     } else {
-        rowSize = 210;
+        rowSize = 225;
     }
     return rowSize;
 }
@@ -1314,7 +1388,7 @@ double varTotal;
             } else if([appDelegate.cartTypeLivr isEqual:@"1b"]){
                 commTypeLivr = 1;
                 commDelaiPickup = 48;
-            } else if([appDelegate.cartTypeLivr isEqual:@"2"]){
+            } else {
                 commTypeLivr = 2;
                 commDelaiPickup = 0;
             }
@@ -1465,14 +1539,34 @@ double varTotal;
     sqlite3_finalize(stmt);
 }
 
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    if (indexPath.section == 2) {
+        if([self.selectedOrder.commStatutID isEqual: @"1"]){
+            static NSString *CellIdentifier = @"itemCell";
+            UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
+            if ([cell.reuseIdentifier isEqualToString:CellIdentifier])
+            {
+                [self performSegueWithIdentifier:@"toProdEdit" sender:cell];
+            }
+        }
+    }
+    
+}
+
 - (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
     
-    if((self.selectedOrder != nil) && (![self.selectedOrder.commStatutID isEqual: @"1"])) {
-        return NO;
+    if (indexPath.section == 2) {
+        if((self.selectedOrder != nil) && (![self.selectedOrder.commStatutID isEqual: @"1"])) {
+            return NO;
+        } else {
+            return YES;
+        }
     } else {
-        return YES;
+        return NO;
     }
 }
+
 
 - (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
     if (editingStyle == UITableViewCellEditingStyleDelete) {
@@ -1484,30 +1578,47 @@ double varTotal;
         [itemImageFiles removeObjectAtIndex:indexPath.row];
         [itemDetails removeObjectAtIndex:indexPath.row];
         [itemQties removeObjectAtIndex:indexPath.row];
-        [itemPrixUnitaire removeObjectAtIndex:indexPath.row];
         [itemFraisTimbrage removeObjectAtIndex:indexPath.row];
         [itemFraisConsult removeObjectAtIndex:indexPath.row];
-        [itemSubTotal removeObjectAtIndex:indexPath.row];
+        [itemFraisConsultPart removeObjectAtIndex:indexPath.row];
+        [itemPrixResto removeObjectAtIndex:indexPath.row];
+        [itemPrixPart removeObjectAtIndex:indexPath.row];
+        [itemSubTotalResto removeObjectAtIndex:indexPath.row];
+        [itemSubTotalPart removeObjectAtIndex:indexPath.row];
         
         productList = appDelegate.cartProducts;
         NSInteger arraySize = [productList count];
         
         varSubTotal = 0;
         varTotal = 0;
+        varTotalHon = 0;
+        varTotalSAQ = 0;
         
         for(int i = 0; i < arraySize; i++){
             Product *currProduct = nil;
             currProduct = [appDelegate.cartProducts objectAtIndex:i];
             
-            double tmpCalc = [currProduct.vinPrixAchat doubleValue] + [currProduct.vinFraisEtiq doubleValue] + [currProduct.vinFraisBout doubleValue];
-            
             double qtyTmp = [[appDelegate.cartQties objectAtIndex:i] doubleValue];
-            double unitPriceTmp = tmpCalc;
-            double subTotalTmp = qtyTmp * unitPriceTmp;
+            double tmpCalcSAQ;
+            double tmpCalcHon;
             
-            varSubTotal = varSubTotal + subTotalTmp;
-            varTotal = varSubTotal;
-            
+            if(([appDelegate.sessionActiveClient.clientType isEqual:@"Particulier"]) || ([appDelegate.sessionActiveClient.clientType isEqual:@"Particulier avec SAQ"])){
+                tmpCalcSAQ = [currProduct.vinPrixAchat doubleValue];
+                tmpCalcHon = [currProduct.vinFraisBoutPart doubleValue];
+                varTotalHon = varTotalHon + (qtyTmp * tmpCalcHon);
+                varTotalSAQ = varTotalSAQ + (qtyTmp * tmpCalcSAQ);
+                
+                double subTotalPart = qtyTmp * (tmpCalcHon + tmpCalcSAQ);
+                varSubTotal = varSubTotal + subTotalPart;
+            } else {
+                tmpCalcSAQ = [currProduct.vinPrixAchat doubleValue] + [currProduct.vinFraisBout doubleValue];
+                tmpCalcHon = [currProduct.vinFraisBout doubleValue];
+                varTotalHon = varTotalHon + (qtyTmp * tmpCalcHon);
+                varTotalSAQ = varTotalSAQ + (qtyTmp * tmpCalcSAQ);
+                
+                double subTotalResto = qtyTmp * (tmpCalcHon + tmpCalcSAQ);
+                varSubTotal = varSubTotal + subTotalResto;
+            }
         }
         
         [tableView reloadData]; // tell table to refresh now
@@ -1527,6 +1638,22 @@ double varTotal;
         BIDSelectProductTableVC *productSelectViewController = segue.destinationViewController;
         productSelectViewController.pickupSource = @"Commande";
         
+    }
+    
+    if ([segue.identifier isEqualToString:@"toProdEdit"])
+    {
+        Product *product = nil;
+        
+
+        NSIndexPath *indexPath = [self.tableView indexPathForCell:sender];
+        product = [appDelegate.cartProducts objectAtIndex:indexPath.row];
+
+        BIDProdDetailsViewController *prodDetailsViewController = segue.destinationViewController;
+        prodDetailsViewController.isInEditMode = YES;
+        prodDetailsViewController.product = product;
+        prodDetailsViewController.currProductQty = [[appDelegate.cartQties objectAtIndex:indexPath.row] intValue];
+        prodDetailsViewController.cartArrayIndex = indexPath.row;
+        prodDetailsViewController.pickupSource = @"Commande";
     }
     
     

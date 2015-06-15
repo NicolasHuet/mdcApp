@@ -13,6 +13,10 @@
 
 @property (nonatomic, strong) Product *product;
 @property (nonatomic) Boolean isInSelectMode;
+@property (nonatomic) Boolean isInEditMode;
+@property (nonatomic) NSInteger cartArrayIndex;
+@property (nonatomic) NSInteger currProductQty;
+
 @property (strong,nonatomic) NSString *pickupSource;
 
 @property (strong, nonatomic) IBOutlet UIImageView *prodDetailImage;
@@ -46,9 +50,11 @@
 - (IBAction)subsEmpaq:(id)sender;
 
 @property (strong, nonatomic) IBOutlet UIButton *addToCartButton;
+@property (strong, nonatomic) IBOutlet UIButton *saveToCartButton;
 
 - (IBAction)textFieldDoneEditing:(id)sender;
 
 - (IBAction)addToCart:(id)sender;
+- (IBAction)saveToCart:(id)sender;
 
 @end
