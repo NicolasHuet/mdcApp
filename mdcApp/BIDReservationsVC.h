@@ -8,10 +8,11 @@
 
 #import <UIKit/UIKit.h>
 #import <sqlite3.h>
-#import "PRELocalDBTools.h"
+//#import "PRELocalDBTools.h"
 #import "BIDCartViewController.h"
 #import "Order.h"
 #import "OrderItem.h"
+#import "MBProgressHUD.h"
 
 @interface BIDReservationsVC : UITableViewController <UISearchBarDelegate, UISearchDisplayDelegate, UIActionSheetDelegate>
 
@@ -21,6 +22,8 @@
 
 @property (nonatomic, strong) NSMutableArray *orderSyncArray;
 @property (nonatomic, strong) NSMutableArray *orderItemsArray;
+
+@property (nonatomic) Boolean needsRefreshing;
 
 - (IBAction)actionToNewOrder:(id)sender;
 

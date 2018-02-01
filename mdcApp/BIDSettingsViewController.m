@@ -7,6 +7,9 @@
 //
 
 #import "BIDSettingsViewController.h"
+#import "Product.h"
+#import "Order.h"
+#import "OrderItem.h"
 
 sqlite3 *database;
 NSString * userCodeToReturn;
@@ -17,6 +20,10 @@ NSData *jsonData;
 NSData *jsonDataForModified;
 NSData *jsonDataReservations;
 NSData *jsonDataForModifiedReservations;
+
+MBProgressHUD *hud;
+
+NSUserDefaults *userDefaults;
 
 @implementation BIDSettingsViewController
 
@@ -42,6 +49,8 @@ NSData *jsonDataForModifiedReservations;
     
     appDelegate = [[UIApplication sharedApplication] delegate];
     
+    userDefaults = [NSUserDefaults standardUserDefaults];
+    
     // Do any additional setup after loading the view.
 }
 
@@ -53,23 +62,23 @@ NSData *jsonDataForModifiedReservations;
 
 - (void)instancAction {
     
-    [self convertLocalOrdersToJson];
-    [self convertModifiedSynchedOrdersToJson];
-    [self convertLocalReservationsToJson];
-    [self convertModifiedSynchedReservationsToJson];
+    [self setConvertLocalOrdersToJson];
+    [self setConvertModifiedSynchedOrdersToJson];
+    [self setConvertLocalReservationsToJson];
+    [self setConvertModifiedSynchedReservationsToJson];
     
-    [self checkConnectivityForFull];
+    [self setCheckConnectivityForFull];
     
 }
 
 - (IBAction)ordersSync:(id)sender {
     
-    [self convertLocalOrdersToJson];
-    [self convertModifiedSynchedOrdersToJson];
-    [self convertLocalReservationsToJson];
-    [self convertModifiedSynchedReservationsToJson];
+    [self setConvertLocalOrdersToJson];
+    [self setConvertModifiedSynchedOrdersToJson];
+    [self setConvertLocalReservationsToJson];
+    [self setConvertModifiedSynchedReservationsToJson];
     
-    [self checkConnectivity];
+    [self setCheckConnectivity];
     
 }
 
@@ -119,9 +128,7 @@ NSData *jsonDataForModifiedReservations;
 }
 
 
-- (void)performSyncWithLogin {
-    
-    
+- (void)setPerformSyncWithLogin {
     
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     NSString *tmpUser = [[defaults objectForKey:@"repID_preference"] lowercaseString];
@@ -164,9 +171,13 @@ NSData *jsonDataForModifiedReservations;
                                                                        [userDefaults setObject:userCodeRoleToReturn forKey:@"UserRole"];
                                                                        [userDefaults synchronize];
                                                                        
-                                                                       [self updateVinsTable];
-                                                                       [self updateClientsTable];
-                                                                       [self updateCommandesTable];
+                                                                      // [self setUpdateVinsTable];
+                                                                      
+                                                                       [self setUpdateVinsTable];
+                                                                       
+                                                                      // [self setUpdateClientsTable];
+                                                                       [self setUpdateClientsTable];
+                                                                       [self setUpdateCommandesTable];
                                                                        
                                                                    }
                                                                    
@@ -193,7 +204,7 @@ NSData *jsonDataForModifiedReservations;
     
 }
 
-- (void) instantiateLocalDB {
+- (void) setInstantiateLocalDB {
     
     // Local database initialization
     
@@ -418,13 +429,7 @@ NSData *jsonDataForModifiedReservations;
     
 }
 
-- (void) updateTypeClientTable {
-    
-    UIActivityIndicatorView *spinner = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge];
-    spinner.center = CGPointMake(384, 400);
-    spinner.hidesWhenStopped = YES;
-    [self.view addSubview:spinner];
-    [spinner startAnimating];
+- (void) setUpdateTypeClientTable {
     
     char *errorMsg = nil;
     
@@ -481,7 +486,7 @@ NSData *jsonDataForModifiedReservations;
                                                                
                                                                if ([[NSThread currentThread] isMainThread]){
                                                                    NSLog(@"In main thread--completion handler");
-                                                                   [spinner stopAnimating];
+                                                                   //[spinner stopAnimating];
                                                                }
                                                                else{
                                                                    NSLog(@"Not in main thread--completion handler");
@@ -492,13 +497,7 @@ NSData *jsonDataForModifiedReservations;
     [dataTask resume];
 }
 
-- (void) updateClientsTable {
-    
-    UIActivityIndicatorView *spinner = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge];
-    spinner.center = CGPointMake(384, 400);
-    spinner.hidesWhenStopped = YES;
-    [self.view addSubview:spinner];
-    [spinner startAnimating];
+- (void) setUpdateClientsTable {
     
     appDelegate.clientsViewNeedsRefreshing = YES;
     
@@ -522,8 +521,11 @@ NSData *jsonDataForModifiedReservations;
     [urlRequest setHTTPMethod:@"GET"];
     [urlRequest setHTTPBody:[params dataUsingEncoding:NSUTF8StringEncoding]];
     
+    //appDelegate.glClientArray = [[NSMutableArray alloc]init];
+    
     NSURLSessionDataTask * dataTask =[defaultSession dataTaskWithRequest:urlRequest
                                                        completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+                                                           
                                                            NSLog(@"Response:%@ %@\n", response, error);
                                                            if(error == nil){
                                                            }
@@ -583,17 +585,6 @@ NSData *jsonDataForModifiedReservations;
                                                                NSString * clientJourLivr;
                                                                clientJourLivr = [[rows objectAtIndex:i] objectForKey:@"clientJourLivr"];
                                                                
-                                                               /*
-                                                                NSLog(@"ID: %i",clientID);
-                                                                NSLog(@"Nom: %@",clientName);
-                                                                NSLog(@"Add: %@",clientAdr1);
-                                                                NSLog(@"Ville: %@",clientVille);
-                                                                NSLog(@"Prov: %@",clientProv);
-                                                                NSLog(@"CP: %@",clientCodePostal);
-                                                                NSLog(@"Cont: %@",clientContact);
-                                                                NSLog(@"Tel: %@",clientTel1);
-                                                                NSLog(@"Type: %i",typeClient);
-                                                                */
                                                                
                                                                if (sqlite3_prepare_v2(database, update, -1, &stmt, nil)
                                                                    == SQLITE_OK) {
@@ -613,6 +604,27 @@ NSData *jsonDataForModifiedReservations;
                                                                    sqlite3_bind_int(stmt, 14, clientTypeFact);
                                                                    sqlite3_bind_text(stmt, 15, [clientJourLivr UTF8String], -1, NULL);
                                                                }
+                                                                
+                                                               
+                                                               /*
+                                                               Client *clientToAdd = [[Client alloc] init];
+                                                               clientToAdd.clientID = [NSString stringWithFormat:@"%i", clientID];
+                                                               clientToAdd.name = clientName;
+                                                               clientToAdd.personneRessource = clientContact;
+                                                               clientToAdd.telephone = clientTel1;
+                                                               clientToAdd.clientType = [NSString stringWithFormat:@"%i", typeClient];
+                                                               clientToAdd.address = clientAdr1;
+                                                               clientToAdd.city = clientVille;
+                                                               clientToAdd.province = clientProv;
+                                                               clientToAdd.postalcode = clientCodePostal;
+                                                               clientToAdd.clientIDSAQ = clientIDSAQ;
+                                                               clientToAdd.clientTypeFact = [NSString stringWithFormat:@"%i", clientTypeFact];
+                                                               clientToAdd.clientJourLivr = clientJourLivr;
+                                                               clientToAdd.clientTitulaireID = [NSString stringWithFormat:@"%i", clientTitulaireID];
+                                                               clientToAdd.clientTempTitulaireID = [NSString stringWithFormat:@"%i", clientTempTitulaireID];
+                                                               
+                                                               [appDelegate.glClientArray addObject:clientToAdd];
+                                                                */
                                                                
                                                                /*
                                                                 1-clientID INT PRIMARY KEY,
@@ -654,7 +666,7 @@ NSData *jsonDataForModifiedReservations;
                                                                
                                                                if ([[NSThread currentThread] isMainThread]){
                                                                    NSLog(@"In main thread--completion handler");
-                                                                   [spinner stopAnimating];
+                                                                   //[spinner stopAnimating];
                                                                }
                                                                else{
                                                                    NSLog(@"Not in main thread--completion handler");
@@ -665,13 +677,154 @@ NSData *jsonDataForModifiedReservations;
     [dataTask resume];
 }
 
-- (void) updateVinsTable {
+
+- (void) updateClientsTable {
     
-    UIActivityIndicatorView *spinner = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge];
-    spinner.center = CGPointMake(384, 400);
-    spinner.hidesWhenStopped = YES;
-    [self.view addSubview:spinner];
-    [spinner startAnimating];
+    NSString * repID = appDelegate.currLoggedUser;
+    
+    NSURLSessionConfiguration *defaultConfigObject = [NSURLSessionConfiguration defaultSessionConfiguration];
+    NSURLSession *defaultSession = [NSURLSession sessionWithConfiguration: defaultConfigObject delegate: nil delegateQueue: [NSOperationQueue mainQueue]];
+    
+    NSString *fullURL = [NSString stringWithFormat:@"%@/mobileSync/clientsRepJson.php?repID=%@", appDelegate.syncServer, repID];
+    NSURL * url = [NSURL URLWithString:fullURL];
+    NSMutableURLRequest * urlRequest = [NSMutableURLRequest requestWithURL:url];
+    NSString * params = @"";
+    [urlRequest setHTTPMethod:@"GET"];
+    [urlRequest setHTTPBody:[params dataUsingEncoding:NSUTF8StringEncoding]];
+    
+    appDelegate.glClientArray = [[NSMutableArray alloc]init];
+    
+    NSURLSessionDataTask * dataTask =[defaultSession dataTaskWithRequest:urlRequest
+                                                       completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+                                                           
+                                                           NSLog(@"Response:%@ %@\n", response, error);
+                                                           if(error == nil){
+                                                           }
+                                                           
+                                                           NSMutableArray *rows  = [NSJSONSerialization JSONObjectWithData: data options: NSJSONReadingMutableContainers error: &error];
+                                                           
+                                                           for (int i=0; i<[rows count]; i++) {
+                                                               
+                                                               int clientID;
+                                                               clientID = [[[rows objectAtIndex:i] objectForKey:@"clientID"]intValue];
+                                                               
+                                                               NSString * clientName;
+                                                               NSString * tmpClientName = [[rows objectAtIndex:i] objectForKey:@"clientName"];
+                                                               clientName = [NSString stringWithCString:[tmpClientName cStringUsingEncoding:NSISOLatin1StringEncoding] encoding:NSUTF8StringEncoding];
+                                                               
+                                                               
+                                                               NSString * clientAdr1;
+                                                               clientAdr1 = [[rows objectAtIndex:i] objectForKey:@"clientAddress"];
+                                                               
+                                                               NSString * clientVille;
+                                                               clientVille = [[rows objectAtIndex:i] objectForKey:@"clientVille"];
+                                                               
+                                                               NSString * clientProv;
+                                                               clientProv = [[rows objectAtIndex:i] objectForKey:@"clientProv"];
+                                                               
+                                                               NSString * clientCodePostal;
+                                                               clientCodePostal = [[rows objectAtIndex:i] objectForKey:@"clientCodePostal"];
+                                                               
+                                                               NSString * clientContact;
+                                                               clientContact = [[rows objectAtIndex:i] objectForKey:@"clientContact"];
+                                                               
+                                                               NSString * clientTel1;
+                                                               clientTel1 = [[rows objectAtIndex:i] objectForKey:@"clientTel1"];
+                                                               
+                                                               int typeClient;
+                                                               typeClient = [[[rows objectAtIndex:i] objectForKey:@"clientType"]intValue];
+                                                               
+                                                               NSString * clientIDSAQ;
+                                                               clientIDSAQ = [[rows objectAtIndex:i] objectForKey:@"clientIDSAQ"];
+                                                               
+                                                               int clientTitulaireID;
+                                                               clientTitulaireID = [[[rows objectAtIndex:i] objectForKey:@"clientTitulaireID"]intValue];
+                                                               
+                                                               int clientTempTitulaireID;
+                                                               clientTempTitulaireID = [[[rows objectAtIndex:i] objectForKey:@"clientTempTitulaireID"]intValue];
+                                                               
+                                                               int clientTypeLivrID;
+                                                               clientTypeLivrID = [[[rows objectAtIndex:i] objectForKey:@"clientTypeLivrID"]intValue];
+                                                               
+                                                               int clientTypeFact;
+                                                               clientTypeFact = [[[rows objectAtIndex:i] objectForKey:@"clientTypeFact"]intValue];
+                                                               
+                                                               NSString * clientJourLivr;
+                                                               clientJourLivr = [[rows objectAtIndex:i] objectForKey:@"clientJourLivr"];
+                                                               
+                                                               
+                                                                Client *clientToAdd = [[Client alloc] init];
+                                                                clientToAdd.clientID = [NSString stringWithFormat:@"%i", clientID];
+                                                                clientToAdd.name = clientName;
+                                                                clientToAdd.personneRessource = clientContact;
+                                                                clientToAdd.telephone = clientTel1;
+                                                                clientToAdd.clientType = [NSString stringWithFormat:@"%i", typeClient];
+                                                                clientToAdd.address = clientAdr1;
+                                                                clientToAdd.city = clientVille;
+                                                                clientToAdd.province = clientProv;
+                                                                clientToAdd.postalcode = clientCodePostal;
+                                                                clientToAdd.clientIDSAQ = clientIDSAQ;
+                                                                clientToAdd.clientTypeFact = [NSString stringWithFormat:@"%i", clientTypeFact];
+                                                                clientToAdd.clientJourLivr = clientJourLivr;
+                                                                clientToAdd.clientTitulaireID = [NSString stringWithFormat:@"%i", clientTitulaireID];
+                                                                clientToAdd.clientTempTitulaireID = [NSString stringWithFormat:@"%i", clientTempTitulaireID];
+                                                                
+                                                                [appDelegate.glClientArray addObject:clientToAdd];
+                                                               
+                                                               /*
+                                                                1-clientID INT PRIMARY KEY,
+                                                                2-clientName TEXT,
+                                                                3-clientAdr1 TEXT,
+                                                                4-clientAdr2 TEXT,
+                                                                5-clientVille TEXT,
+                                                                6-clientProv TEXT,
+                                                                7-clientCodePostal TEXT,
+                                                                8-clientTelComp TEXT,
+                                                                9-clientContact TEXT,
+                                                                10-clientEmail TEXT,
+                                                                11-clientTel1 TEXT,
+                                                                12-clientTel2 TEXT,
+                                                                13-clientTel3 TEXT,
+                                                                14-clientFactContact TEXT,
+                                                                15-clientFactEmail TEXT,
+                                                                16-clientFactTel1 TEXT,
+                                                                17-clientTypeClntID INT,
+                                                                18-clientIDSAQ TEXT,
+                                                                19-clientActif INT,
+                                                                20-clientTypeLivrID INT,
+                                                                21-clientSuccLivr INT,
+                                                                22-clientTypeFact INT,
+                                                                23-clientFactMensuelle INT,
+                                                                24-clientTitulaireID INT,
+                                                                25-clientLivrJourFixe TEXT,
+                                                                26-clientNoMembre TEXT,
+                                                                27-clientEnvoiFact INT
+                                                                */
+                                                               
+                                                           }
+                                                           
+                                                           dispatch_async(dispatch_get_main_queue(), ^{
+                                                               
+                                                               if ([[NSThread currentThread] isMainThread]){
+                                                                   NSLog(@"In main thread--completion handler");
+                                                                   //[spinner stopAnimating];
+                                                                   
+                                                                   NSArray *tmpArray = appDelegate.glClientArray;
+                                                                   NSData *data = [NSKeyedArchiver archivedDataWithRootObject:tmpArray];
+                                                                   [userDefaults setObject:data forKey:@"clientsTable"];
+                                                                   [userDefaults synchronize];
+                                                               }
+                                                               else{
+                                                                   NSLog(@"Not in main thread--completion handler");
+                                                               }
+                                                           });
+                                                           
+                                                       }];
+    [dataTask resume];
+}
+
+
+- (void) setUpdateVinsTable {
     
     appDelegate.productsViewNeedsRefreshing = YES;
     
@@ -817,6 +970,7 @@ NSData *jsonDataForModifiedReservations;
                                                                    
                                                                }
                                                                
+                                                               NSLog(@"Before update %d", vinID);
                                                                if (sqlite3_step(stmt) != SQLITE_DONE)
                                                                    NSAssert(0, @"Error updating table: %s", errorMsg);
                                                                sqlite3_finalize(stmt);
@@ -827,7 +981,119 @@ NSData *jsonDataForModifiedReservations;
                                                                
                                                                if ([[NSThread currentThread] isMainThread]){
                                                                    NSLog(@"In main thread--completion handler");
-                                                                   [spinner stopAnimating];
+                                                                   //[spinner stopAnimating];
+                                                                   
+                                                               }
+                                                               else{
+                                                                   NSLog(@"Not in main thread--completion handler");
+                                                               }
+                                                           });
+                                                           
+                                                       }];
+    [dataTask resume];
+}
+
+- (void) updateVinsTable {
+    
+    appDelegate.glProductArray = [[NSMutableArray alloc]init];
+    
+    NSURLSessionConfiguration *defaultConfigObject = [NSURLSessionConfiguration defaultSessionConfiguration];
+    NSURLSession *defaultSession = [NSURLSession sessionWithConfiguration: defaultConfigObject delegate: nil delegateQueue: [NSOperationQueue mainQueue]];
+    
+    NSString *fullURL = [NSString stringWithFormat:@"%@/mobileSync/vinsJson.php", appDelegate.syncServer];
+    NSURL * url = [NSURL URLWithString:fullURL];
+    NSMutableURLRequest * urlRequest = [NSMutableURLRequest requestWithURL:url];
+    NSString * params = @"";
+    [urlRequest setHTTPMethod:@"GET"];
+    [urlRequest setHTTPBody:[params dataUsingEncoding:NSUTF8StringEncoding]];
+    
+    NSURLSessionDataTask * dataTask =[defaultSession dataTaskWithRequest:urlRequest
+                                                       completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+                                                           NSLog(@"Response:%@ %@\n", response, error);
+                                                           if(error == nil){
+                                                           }
+                                                           
+                                                           NSMutableArray *rows  = [NSJSONSerialization JSONObjectWithData: data options: NSJSONReadingMutableContainers error: &error];
+                                                           
+                                                           for (int i=0; i<[rows count]; i++) {
+                                                               Product *productToAdd = [[Product alloc]init];
+                                                               
+                                                               productToAdd.vinID = [[rows objectAtIndex:i] objectForKey:@"vinID"];
+                                                               productToAdd.vinNumero = [[rows objectAtIndex:i] objectForKey:@"vinNumero"];
+                                                               
+                                                               productToAdd.vinNom = [[rows objectAtIndex:i] objectForKey:@"vinNom"];
+                                                               
+                                                               productToAdd.vinCouleurID = [[rows objectAtIndex:i] objectForKey:@"vinCouleurID"];
+                                                               
+                                                               productToAdd.vinEmpaq = [[rows objectAtIndex:i] objectForKey:@"vinEmpaq"];
+                                                               
+                                                              
+                                                               productToAdd.vinRegionID = [[rows objectAtIndex:i] objectForKey:@"vinRegionID"];
+                                                               
+                                                               
+                                                               productToAdd.vinNoDemande = [[rows objectAtIndex:i] objectForKey:@"vinNoDemande"];
+                                                               
+                                                               productToAdd.vinIDFournisseur = [[rows objectAtIndex:i] objectForKey:@"vinIDFournisseur"];
+                                                       
+                                                               productToAdd.vinDateAchat = [[rows objectAtIndex:i] objectForKey:@"vinDateAchat"];
+                                                          
+                                                               productToAdd.vinQteAchat = [[rows objectAtIndex:i] objectForKey:@"vinQteAchat"];
+                                                          
+                                                               productToAdd.vinTotalAssigned = [[rows objectAtIndex:i] objectForKey:@"vinTotalAssigned"];
+                                                               
+                                                               productToAdd.vinFormat = [[rows objectAtIndex:i] objectForKey:@"vinFormat"];
+                                                               productToAdd.vinPrixAchat = [[rows objectAtIndex:i] objectForKey:@"vinPrixAchat"];
+                                                               
+                                                               productToAdd.vinFraisEtiq = [[rows objectAtIndex:i] objectForKey:@"vinFraisEtiq"];
+                                                               
+                                                               productToAdd.vinFraisBout = [[rows objectAtIndex:i] objectForKey:@"vinFraisBout"];
+                                                               
+                                                               productToAdd.vinFraisBoutPart = [[rows objectAtIndex:i] objectForKey:@"vinFraisBoutPart"];
+                                                               
+                                                               productToAdd.vinPrixVente = [[rows objectAtIndex:i] objectForKey:@"vinPrixVente"];
+                                                               
+                                                               productToAdd.vinEpuise = [[rows objectAtIndex:i] objectForKey:@"vinEpuise"];
+                                                               
+                                                               productToAdd.vinDisponible = [[rows objectAtIndex:i] objectForKey:@"vinDisponible"];
+                                                               
+                                                               [appDelegate.glProductArray addObject:productToAdd];
+                                                               
+                                                               /*
+                                                                vinID,
+                                                                vinNumero,
+                                                                vinNom,
+                                                                vinCouleurID,
+                                                                vinEmpaq,
+                                                                vinRegionID,
+                                                                vinNoDemande,
+                                                                vinIDFournisseur,
+                                                                vinDateAchat,
+                                                                vinQteAchat,
+                                                                vinTotalAssigned,
+                                                                vinFormat,
+                                                                vinPrixAchat,
+                                                                vinFraisEtiq,
+                                                                vinFraisBout,
+                                                                vinFraisBoutPart,
+                                                                vinPrixVente,
+                                                                vinEpuise,
+                                                                vinDisponible
+                                                                */
+                                                               
+                                                               
+                                                               
+                                                           }
+                                                           
+                                                           dispatch_async(dispatch_get_main_queue(), ^{
+                                                               
+                                                               if ([[NSThread currentThread] isMainThread]){
+                                                                   NSLog(@"In main thread--completion handler");
+                                                                   //[spinner stopAnimating];
+                                                                   
+                                                                   NSArray *tmpArray = appDelegate.glProductArray;
+                                                                   NSData *data = [NSKeyedArchiver archivedDataWithRootObject:tmpArray];
+                                                                   [userDefaults setObject:data forKey:@"productsTable"];
+                                                                   [userDefaults synchronize];
                                                                }
                                                                else{
                                                                    NSLog(@"Not in main thread--completion handler");
@@ -839,13 +1105,7 @@ NSData *jsonDataForModifiedReservations;
 }
 
 
-- (void) updateCommandesTable {
-    
-    UIActivityIndicatorView *spinner = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge];
-    spinner.center = CGPointMake(384, 400);
-    spinner.hidesWhenStopped = YES;
-    [self.view addSubview:spinner];
-    [spinner startAnimating];
+- (void) setUpdateCommandesTable {
     
     NSString *repID = appDelegate.currLoggedUser;
     char *errorMsg = nil;
@@ -960,6 +1220,7 @@ NSData *jsonDataForModifiedReservations;
                                                                 14-commLastUpdated TEXT
                                                                 */
                                                                
+                                                               NSLog(@"Before update Commandes");
                                                                if (sqlite3_step(stmt) != SQLITE_DONE)
                                                                    NSAssert(0, @"Error updating table: %s", errorMsg);
                                                                sqlite3_finalize(stmt);
@@ -970,7 +1231,7 @@ NSData *jsonDataForModifiedReservations;
                                                                
                                                                if ([[NSThread currentThread] isMainThread]){
                                                                    NSLog(@"In main thread--completion handler");
-                                                                   [spinner stopAnimating];
+                                                                   //[spinner stopAnimating];
                                                                                                                                   }
                                                                else{
                                                                    NSLog(@"Not in main thread--completion handler");
@@ -981,13 +1242,83 @@ NSData *jsonDataForModifiedReservations;
     [dataTask resume];
 }
 
-- (void) updateCommandeItemsTable {
+- (void) updateCommandesTable {
     
-    UIActivityIndicatorView *spinner = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge];
-    spinner.center = CGPointMake(384, 400);
-    spinner.hidesWhenStopped = YES;
-    [self.view addSubview:spinner];
-    [spinner startAnimating];
+    appDelegate.glOrderArray = [[NSMutableArray alloc]init];
+    NSString *repID = appDelegate.currLoggedUser;
+    
+    NSURLSessionConfiguration *defaultConfigObject = [NSURLSessionConfiguration defaultSessionConfiguration];
+    NSURLSession *defaultSession = [NSURLSession sessionWithConfiguration: defaultConfigObject delegate: nil delegateQueue: [NSOperationQueue mainQueue]];
+    
+    NSString *fullURL = [NSString stringWithFormat:@"%@/mobileSync/commRepJson.php?repID=%@", appDelegate.syncServer, repID];
+    NSURL * url = [NSURL URLWithString:fullURL];
+    NSMutableURLRequest * urlRequest = [NSMutableURLRequest requestWithURL:url];
+    NSString * params = @"";
+    [urlRequest setHTTPMethod:@"GET"];
+    [urlRequest setHTTPBody:[params dataUsingEncoding:NSUTF8StringEncoding]];
+    
+    NSURLSessionDataTask * dataTask =[defaultSession dataTaskWithRequest:urlRequest
+                                                       completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+                                                           NSLog(@"Response:%@ %@\n", response, error);
+                                                           if(error == nil){
+                                                           
+                                                           
+                                                               NSMutableArray *rows  = [NSJSONSerialization JSONObjectWithData: data options: NSJSONReadingMutableContainers error: &error];
+                                                           
+                                                               for (int i=0; i<[rows count]; i++) {
+                                                                   //{"commID":92066,
+                                                                   //"commStatutID":10,
+                                                                   //"commRepID":10,
+                                                                   //"commIDSAQ":"",
+                                                                   //"commClientID":1922,
+                                                                   //"commCommTypeLivrID":4,
+                                                                   //"commDateFact":"",
+                                                                   //"commDelaiPickup":"0",
+                                                                   //"commDatePickup":"",
+                                                                   //"commClientJourPickup":"Mercredi",
+                                                                   //"commPartSuccID":1,
+                                                                   //"commTypeClientID":1,
+                                                                   //"commCommentaire":""}
+                                                               
+                                                               
+                                                                   /*
+                                                                    1-commID INT PRIMARY KEY,
+                                                                    2-commStatutID INT,
+                                                                    3-commRepID INT,
+                                                                    4-commIDSAQ TEXT,
+                                                                    5-commClientID INT,
+                                                                    6-commTypeClntID INT,
+                                                                    7-commCommTypeLivrID INT,
+                                                                    8-commDateFact TEXT,
+                                                                    9-commDelaiPickup INT,
+                                                                    10-commDatePickup TEXT,
+                                                                    11-commClientJourLivr TEXT,
+                                                                    12-commPartSuccID INT,
+                                                                    13-commCommentaire TEXT,
+                                                                    14-commLastUpdated TEXT
+                                                                    */
+                                                               
+                                                                   
+                                                               
+                                                                }
+                                                           }
+                                                           
+                                                           dispatch_async(dispatch_get_main_queue(), ^{
+                                                               
+                                                               if ([[NSThread currentThread] isMainThread]){
+                                                                   NSLog(@"In main thread--completion handler");
+                                                                   //[spinner stopAnimating];
+                                                               }
+                                                               else{
+                                                                   NSLog(@"Not in main thread--completion handler");
+                                                               }
+                                                           });
+                                                           
+                                                       }];
+    [dataTask resume];
+}
+
+- (void) setUpdateCommandeItemsTable {
     
     char *errorMsg = nil;
     
@@ -1053,6 +1384,7 @@ NSData *jsonDataForModifiedReservations;
                                                                 4-commItemVinQte INT
                                                                 */
                                                                
+                                                               NSLog(@"Before update Commandes Itemss");
                                                                if (sqlite3_step(stmt) != SQLITE_DONE)
                                                                    NSAssert(0, @"Error updating table: %s", errorMsg);
                                                                sqlite3_finalize(stmt);
@@ -1063,7 +1395,7 @@ NSData *jsonDataForModifiedReservations;
                                                                
                                                                if ([[NSThread currentThread] isMainThread]){
                                                                    NSLog(@"In main thread--completion handler");
-                                                                   [spinner stopAnimating];
+                                                                   [hud hide:YES];
                                                                }
                                                                else{
                                                                    NSLog(@"Not in main thread--completion handler");
@@ -1074,13 +1406,76 @@ NSData *jsonDataForModifiedReservations;
     [dataTask resume];
 }
 
-- (void) updateReservationsTable {
+- (void) updateCommandeItemsTable {
     
-    UIActivityIndicatorView *spinner = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge];
-    spinner.center = CGPointMake(384, 400);
-    spinner.hidesWhenStopped = YES;
-    [self.view addSubview:spinner];
-    [spinner startAnimating];
+    appDelegate.glOrderItemsArray = [[NSMutableArray alloc]init];
+    
+    NSURLSessionConfiguration *defaultConfigObject = [NSURLSessionConfiguration defaultSessionConfiguration];
+    NSURLSession *defaultSession = [NSURLSession sessionWithConfiguration: defaultConfigObject delegate: nil delegateQueue: [NSOperationQueue mainQueue]];
+    
+    NSString *fullURL = [NSString stringWithFormat:@"%@/mobileSync/commItemJsonForRep.php?repID=%@", appDelegate.syncServer, appDelegate.currLoggedUser];
+    NSURL * url = [NSURL URLWithString:fullURL];
+    NSMutableURLRequest * urlRequest = [NSMutableURLRequest requestWithURL:url];
+    NSString * params = @"";
+    [urlRequest setHTTPMethod:@"GET"];
+    [urlRequest setHTTPBody:[params dataUsingEncoding:NSUTF8StringEncoding]];
+    
+    NSURLSessionDataTask * dataTask =[defaultSession dataTaskWithRequest:urlRequest
+                                                       completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+                                                           NSLog(@"Response:%@ %@\n", response, error);
+                                                           if(error == nil){
+                                                           
+                                                           
+                                                               NSMutableArray *rows  = [NSJSONSerialization JSONObjectWithData: data options: NSJSONReadingMutableContainers error: &error];
+                                                           
+                                                               for (int i=0; i<[rows count]; i++) {
+                                                               
+                                                                   //(commItemID INT PRIMARY KEY, commItemCommID INT, commItemVinID INT, commItemVinQte INT)
+                                                                   
+                                                                   //NSString *vinID | NSString *vinQte | NSString *vinOverideFrais | NSString *localOrderID;
+                                                                   
+                                                                   //{"commItemID":6098,"commItemCommID":92066,"vinID":503,"vinQte":60}
+                                                                   
+                                                                   OrderItem *itemToAdd = [[OrderItem alloc]init];
+                                                                   
+                                                                   itemToAdd.commItemID = [[rows objectAtIndex:i] objectForKey:@"commItemID"];
+                                                                   itemToAdd.commItemCommID = [[rows objectAtIndex:i] objectForKey:@"commItemCommID"];
+                                                                   itemToAdd.vinID = [[rows objectAtIndex:i] objectForKey:@"vinID"];
+                                                                   itemToAdd.vinQte = [[rows objectAtIndex:i] objectForKey:@"vinQte"];
+                                                                   
+                                                                   
+                                                                   [appDelegate.glOrderItemsArray addObject:itemToAdd];
+                                                               
+                                                               }
+                                                            }
+                                                           
+                                                           
+                                                           dispatch_async(dispatch_get_main_queue(), ^{
+                                                               
+                                                               if ([[NSThread currentThread] isMainThread]){
+                                                                   NSLog(@"In main thread--completion handler");
+                                                                   //[hud hide:YES];
+                                                                   NSArray *tmpArray = appDelegate.glOrderItemsArray;
+                                                                   NSData *data = [NSKeyedArchiver archivedDataWithRootObject:tmpArray];
+                                                                   [userDefaults setObject:data forKey:@"CommItemsTable"];
+                                                                   [userDefaults synchronize];
+                                                               }
+                                                               else{
+                                                                   NSLog(@"Not in main thread--completion handler");
+                                                               }
+                                                           });
+                                                           
+                                                       }];
+    [dataTask resume];
+}
+
+- (void) setUpdateReservationsTable {
+    
+    //UIActivityIndicatorView *spinner = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge];
+    //spinner.center = CGPointMake(384, 400);
+    //spinner.hidesWhenStopped = YES;
+    //[self.view addSubview:spinner];
+    //[spinner startAnimating];
     
     NSString *repID = appDelegate.currLoggedUser;
     char *errorMsg = nil;
@@ -1176,6 +1571,7 @@ NSData *jsonDataForModifiedReservations;
                                                                 14-commLastUpdated TEXT
                                                                 */
                                                                
+                                                               NSLog(@"Before update Reservations");
                                                                if (sqlite3_step(stmt) != SQLITE_DONE)
                                                                    NSAssert(0, @"Error updating table: %s", errorMsg);
                                                                sqlite3_finalize(stmt);
@@ -1188,8 +1584,6 @@ NSData *jsonDataForModifiedReservations;
                                                                
                                                                if ([[NSThread currentThread] isMainThread]){
                                                                    NSLog(@"In main thread--completion handler");
-                                                                   [spinner stopAnimating];
-                                                                   
                                                                }
                                                                else{
                                                                    NSLog(@"Not in main thread--completion handler");
@@ -1200,13 +1594,7 @@ NSData *jsonDataForModifiedReservations;
     [dataTask resume];
 }
 
-- (void) updateReservationItemsTable {
-    
-    UIActivityIndicatorView *spinner = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge];
-    spinner.center = CGPointMake(384, 400);
-    spinner.hidesWhenStopped = YES;
-    [self.view addSubview:spinner];
-    [spinner startAnimating];
+- (void) setUpdateReservationItemsTable {
     
     char *errorMsg = nil;
     
@@ -1272,6 +1660,7 @@ NSData *jsonDataForModifiedReservations;
                                                                 4-commItemVinQte INT
                                                                 */
                                                                
+                                                               NSLog(@"Before update Reservations Items");
                                                                if (sqlite3_step(stmt) != SQLITE_DONE)
                                                                    NSAssert(0, @"Error updating table: %s", errorMsg);
                                                                sqlite3_finalize(stmt);
@@ -1282,7 +1671,69 @@ NSData *jsonDataForModifiedReservations;
                                                                
                                                                if ([[NSThread currentThread] isMainThread]){
                                                                    NSLog(@"In main thread--completion handler");
-                                                                   [spinner stopAnimating];
+                                                               }
+                                                               else{
+                                                                   NSLog(@"Not in main thread--completion handler");
+                                                               }
+                                                           });
+                                                           
+                                                       }];
+    [dataTask resume];
+}
+
+- (void) updateReservationItemsTable {
+    
+    appDelegate.glReservationItemsArray = [[NSMutableArray alloc]init];
+    
+    NSURLSessionConfiguration *defaultConfigObject = [NSURLSessionConfiguration defaultSessionConfiguration];
+    NSURLSession *defaultSession = [NSURLSession sessionWithConfiguration: defaultConfigObject delegate: nil delegateQueue: [NSOperationQueue mainQueue]];
+    
+    NSString *fullURL = [NSString stringWithFormat:@"%@/mobileSync/reservItemJsonForRep.php?repID=%@", appDelegate.syncServer, appDelegate.currLoggedUser];
+    NSURL * url = [NSURL URLWithString:fullURL];
+    NSMutableURLRequest * urlRequest = [NSMutableURLRequest requestWithURL:url];
+    NSString * params = @"";
+    [urlRequest setHTTPMethod:@"GET"];
+    [urlRequest setHTTPBody:[params dataUsingEncoding:NSUTF8StringEncoding]];
+    
+    NSURLSessionDataTask * dataTask =[defaultSession dataTaskWithRequest:urlRequest
+                                                       completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+                                                           NSLog(@"Response:%@ %@\n", response, error);
+                                                           if(error == nil){
+                                                               
+                                                               
+                                                               NSMutableArray *rows  = [NSJSONSerialization JSONObjectWithData: data options: NSJSONReadingMutableContainers error: &error];
+                                                               
+                                                               for (int i=0; i<[rows count]; i++) {
+                                                                   
+                                                                   //(commItemID INT PRIMARY KEY, commItemCommID INT, commItemVinID INT, commItemVinQte INT)
+                                                                   
+                                                                   //NSString *vinID | NSString *vinQte | NSString *vinOverideFrais | NSString *localOrderID;
+                                                                   
+                                                                   //{"commItemID":6098,"commItemCommID":92066,"vinID":503,"vinQte":60}
+                                                                   
+                                                                   OrderItem *itemToAdd = [[OrderItem alloc]init];
+                                                                   
+                                                                   itemToAdd.commItemID = [[rows objectAtIndex:i] objectForKey:@"commItemID"];
+                                                                   itemToAdd.commItemCommID = [[rows objectAtIndex:i] objectForKey:@"commItemCommID"];
+                                                                   itemToAdd.vinID = [[rows objectAtIndex:i] objectForKey:@"vinID"];
+                                                                   itemToAdd.vinQte = [[rows objectAtIndex:i] objectForKey:@"vinQte"];
+                                                                   
+                                                                   
+                                                                   [appDelegate.glReservationItemsArray addObject:itemToAdd];
+                                                                   
+                                                               }
+                                                           }
+                                                           
+                                                           
+                                                           dispatch_async(dispatch_get_main_queue(), ^{
+                                                               
+                                                               if ([[NSThread currentThread] isMainThread]){
+                                                                   NSLog(@"In main thread--completion handler");
+                                                                   //[hud hide:YES];
+                                                                   NSArray *tmpArray = appDelegate.glReservationItemsArray;
+                                                                   NSData *data = [NSKeyedArchiver archivedDataWithRootObject:tmpArray];
+                                                                   [userDefaults setObject:data forKey:@"ReservItemsTable"];
+                                                                   [userDefaults synchronize];
                                                                }
                                                                else{
                                                                    NSLog(@"Not in main thread--completion handler");
@@ -1294,7 +1745,7 @@ NSData *jsonDataForModifiedReservations;
 }
 
 
--(void) convertLocalOrdersToJson {
+-(void) setConvertLocalOrdersToJson {
     NSMutableArray *jsonMuteArray = [[NSMutableArray alloc] init];
     
     if (sqlite3_open([[self dataFilePath] UTF8String], &database)
@@ -1447,7 +1898,7 @@ NSData *jsonDataForModifiedReservations;
                                                  error:nil];
 }
 
--(void) convertLocalReservationsToJson {
+-(void) setConvertLocalReservationsToJson {
     NSMutableArray *jsonMuteArray = [[NSMutableArray alloc] init];
     
     if (sqlite3_open([[self dataFilePath] UTF8String], &database)
@@ -1573,7 +2024,7 @@ NSData *jsonDataForModifiedReservations;
 }
 
 
--(void) convertModifiedSynchedOrdersToJson {
+-(void) setConvertModifiedSynchedOrdersToJson {
     NSMutableArray *jsonMuteArray = [[NSMutableArray alloc] init];
     
     if (sqlite3_open([[self dataFilePath] UTF8String], &database)
@@ -1729,7 +2180,7 @@ NSData *jsonDataForModifiedReservations;
                                                             error:nil];
 }
 
--(void) convertModifiedSynchedReservationsToJson {
+-(void) setConvertModifiedSynchedReservationsToJson {
     NSMutableArray *jsonMuteArray = [[NSMutableArray alloc] init];
     
     if (sqlite3_open([[self dataFilePath] UTF8String], &database)
@@ -1855,7 +2306,7 @@ NSData *jsonDataForModifiedReservations;
                                                                         error:nil];
 }
 
--(void) submitLocalOrdersJson {
+-(void) setSubmitLocalOrdersJson {
     
     UIActivityIndicatorView *spinner = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge];
     spinner.center = CGPointMake(384, 400);
@@ -1918,7 +2369,7 @@ NSData *jsonDataForModifiedReservations;
     
 }
 
--(void) submitModifiedDraftOrdersJson {
+-(void) setSubmitModifiedDraftOrdersJson {
     
     UIActivityIndicatorView *spinner = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge];
     spinner.center = CGPointMake(384, 400);
@@ -1981,7 +2432,7 @@ NSData *jsonDataForModifiedReservations;
     
 }
 
--(void) submitLocalReservationsJson {
+-(void) setSubmitLocalReservationsJson {
     
     UIActivityIndicatorView *spinner = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge];
     spinner.center = CGPointMake(384, 400);
@@ -2044,7 +2495,7 @@ NSData *jsonDataForModifiedReservations;
     
 }
 
--(void) submitModifiedReservationsJson {
+-(void) setSubmitModifiedReservationsJson {
     
     UIActivityIndicatorView *spinner = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge];
     spinner.center = CGPointMake(384, 400);
@@ -2109,7 +2560,7 @@ NSData *jsonDataForModifiedReservations;
 
 
 
--(void) resetLocalOrderDBs {
+-(void) setResetLocalOrderDBs {
     
     UIActivityIndicatorView *spinner = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge];
     spinner.center = CGPointMake(384, 400);
@@ -2271,6 +2722,27 @@ NSData *jsonDataForModifiedReservations;
         NSAssert(0, @"Error creating table: %s", errorMsg);
     }
     
+    NSString *dropVinsSQL = @"DROP TABLE IF EXISTS Vins;";
+    
+    if (sqlite3_exec (database, [dropVinsSQL UTF8String],
+                      NULL, NULL, &errorMsg) != SQLITE_OK) {
+        sqlite3_close(database);
+        NSAssert(0, @"Error dropping table: %s", errorMsg);
+    }
+    
+    createSQL = @"CREATE TABLE IF NOT EXISTS Vins "
+    "(vinID INT PRIMARY KEY, vinNumero TEXT, vinNom TEXT, vinCouleurID INT, "
+    "vinEmpaq INT, vinRegionID INT, vinNoDemande TEXT, vinIDFournisseur TEXT, vinDateAchat TEXT, "
+    "vinQteAchat INT, vinTotalAssigned INT, vinFormat TEXT, vinPrixAchat REAL, vinFraisEtiq REAL, "
+    "vinFraisBout REAL, vinFraisBoutPart REAL, vinPrixVente REAL, vinEpuise INT, vinDisponible INT"
+    ");";
+    
+    if (sqlite3_exec (database, [createSQL UTF8String],
+                      NULL, NULL, &errorMsg) != SQLITE_OK) {
+        sqlite3_close(database);
+        NSAssert(0, @"Error creating table: %s", errorMsg);
+    }
+    
     sqlite3_close(database);
     
     [spinner stopAnimating];
@@ -2285,7 +2757,7 @@ NSData *jsonDataForModifiedReservations;
     [actionSheet showInView:self.view];
 }
 
-- (void) checkConnectivity {
+- (void) setCheckConnectivity {
     
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     NSString *tmpUser = [[defaults objectForKey:@"repID_preference"] lowercaseString];
@@ -2318,7 +2790,7 @@ NSData *jsonDataForModifiedReservations;
                                                                    loginResult = [[rows objectAtIndex:i] objectForKey:@"resultCode"];
                                                                    
                                                                    if([loginResult isEqual: @"OK"]){
-                                                                       [self completeSynch];
+                                                                       [self setCompleteSynch];
                                                                        
                                                                    } else {
                                                                        [self syncErrorDetected];
@@ -2347,7 +2819,7 @@ NSData *jsonDataForModifiedReservations;
     
 }
 
-- (void) checkConnectivityForFull {
+- (void) setCheckConnectivityForFull {
     
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     NSString *tmpUser = [[defaults objectForKey:@"repID_preference"] lowercaseString];
@@ -2394,7 +2866,7 @@ NSData *jsonDataForModifiedReservations;
                                                                        [userDefaults setObject:userCodeRoleToReturn forKey:@"UserRole"];
                                                                        [userDefaults synchronize];
                                                                        
-                                                                       [self completeFullSynch];
+                                                                       [self setCompleteFullSynch];
                                                                        
                                                                    } else {
                                                                        [self syncErrorDetected];
@@ -2425,39 +2897,64 @@ NSData *jsonDataForModifiedReservations;
 
 
 
-- (void) completeSynch {
-    [self submitLocalOrdersJson];
-    [self submitModifiedDraftOrdersJson];
-    [self submitLocalReservationsJson];
-    [self submitModifiedReservationsJson];
+- (void) setCompleteSynch {
     
-    [self resetLocalOrderDBs];
+    hud                         = [MBProgressHUD showHUDAddedTo:self.view animated:YES];
+    hud.detailsLabelText        = @"Synchronisation des données";
+    hud.dimBackground           = YES;
+    hud.labelText               = @"SVP Patienter";
+    hud.mode                    = MBProgressHUDModeIndeterminate;
     
-    [self performSelector:@selector(updateCommandesTable) withObject:nil afterDelay:3.0];
-    [self performSelector:@selector(updateReservationsTable) withObject:nil afterDelay:3.0];
+    appDelegate.ordersViewNeedsRefreshing = YES;
+    appDelegate.reservationsViewNeedsRefreshing = YES;
     
-    [self performSelector:@selector(updateCommandeItemsTable) withObject:nil afterDelay:3.0];
-    [self performSelector:@selector(updateReservationItemsTable) withObject:nil afterDelay:3.0];
+    [self setSubmitLocalOrdersJson];
+    [self setSubmitModifiedDraftOrdersJson];
+    [self setSubmitLocalReservationsJson];
+    [self setSubmitModifiedReservationsJson];
+    
+    [self setResetLocalOrderDBs];
+    
+    [self performSelector:@selector(setUpdateVinsTable) withObject:nil afterDelay:3.0];
+    [self performSelector:@selector(updateVinsTable) withObject:nil afterDelay:3.0];
+    
+    [self performSelector:@selector(setUpdateCommandesTable) withObject:nil afterDelay:3.0];
+    [self performSelector:@selector(setUpdateReservationsTable) withObject:nil afterDelay:3.0];
+    [self performSelector:@selector(setUpdateReservationItemsTable) withObject:nil afterDelay:3.0];
+    
+    [self performSelector:@selector(setUpdateCommandeItemsTable) withObject:nil afterDelay:15.0];
+    
     
 }
 
-- (void) completeFullSynch {
+- (void) setCompleteFullSynch {
     
-    [self submitLocalOrdersJson];
-    [self submitModifiedDraftOrdersJson];
-    [self submitLocalReservationsJson];
-    [self submitModifiedReservationsJson];
+    hud                         = [MBProgressHUD showHUDAddedTo:self.view animated:YES];
+    hud.detailsLabelText        = @"Synchronisation des données";
+    hud.dimBackground           = YES;
+    hud.labelText               = @"SVP Patienter";
+    hud.mode                    = MBProgressHUDModeIndeterminate;
     
-    //[self performSelector:@selector(instantiateLocalDB) withObject:nil afterDelay:1.5];
-    [self instantiateLocalDB];
-    [self performSelector:@selector(updateVinsTable) withObject:nil afterDelay:2.5];
-    [self performSelector:@selector(updateClientsTable) withObject:nil afterDelay:2.5];
+    appDelegate.ordersViewNeedsRefreshing = YES;
+    appDelegate.reservationsViewNeedsRefreshing = YES;
     
-    [self performSelector:@selector(updateCommandesTable) withObject:nil afterDelay:3.0];
-    [self performSelector:@selector(updateReservationsTable) withObject:nil afterDelay:3.0];
+    [self setSubmitLocalOrdersJson];
+    [self setSubmitModifiedDraftOrdersJson];
+    [self setSubmitLocalReservationsJson];
+    [self setSubmitModifiedReservationsJson];
     
-    [self performSelector:@selector(updateCommandeItemsTable) withObject:nil afterDelay:3.0];
-    [self performSelector:@selector(updateReservationItemsTable) withObject:nil afterDelay:3.0];
+    [self setInstantiateLocalDB];
+    
+    [self performSelector:@selector(setUpdateVinsTable) withObject:nil afterDelay:3.0];
+    //[self performSelector:@selector(setUpdateVinsTable) withObject:nil afterDelay:3.0];
+    //[self performSelector:@selector(setUpdateClientsTable) withObject:nil afterDelay:3.0];
+    [self performSelector:@selector(setUpdateClientsTable) withObject:nil afterDelay:3.0];
+    [self performSelector:@selector(setUpdateCommandesTable) withObject:nil afterDelay:3.0];
+    [self performSelector:@selector(setUpdateReservationsTable) withObject:nil afterDelay:3.0];
+    [self performSelector:@selector(setUpdateReservationItemsTable) withObject:nil afterDelay:3.0];
+    
+    [self performSelector:@selector(setUpdateCommandeItemsTable) withObject:nil afterDelay:25.0];
+    
 }
 
 @end

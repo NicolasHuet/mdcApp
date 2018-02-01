@@ -20,6 +20,8 @@
 MDCAppDelegate *appDelegate;
 sqlite3 *database;
 
+NSUserDefaults *userDefaults;
+
 - (id)initWithStyle:(UITableViewStyle)style
 {
     self = [super initWithStyle:style];
@@ -43,6 +45,7 @@ sqlite3 *database;
     
     self.clientArray = [[NSMutableArray alloc] init];
     appDelegate = [[UIApplication sharedApplication] delegate];
+    userDefaults = [NSUserDefaults standardUserDefaults];
     
     NSLog(@"Utilisateur Actuel: %@", appDelegate.currLoggedUser);
     
@@ -80,6 +83,7 @@ sqlite3 *database;
             NSString * clientCity;
             NSString * clientProv;
             NSString * clientCodePostal;
+            NSString * clientIDSAQ;
             
             /*
              1-clientID INT PRIMARY KEY,
@@ -135,6 +139,9 @@ sqlite3 *database;
             columnData = (char *)sqlite3_column_text(statement, 10);
             clientTel = [[NSString alloc] initWithUTF8String:columnData];
             
+            columnData = (char *)sqlite3_column_text(statement, 17);
+            clientIDSAQ = [[NSString alloc] initWithUTF8String:columnData];
+            
             columnIntValue = (int)sqlite3_column_int(statement, 16);
             if(columnIntValue == 1){
                 clientType = @"Hotel";
@@ -158,6 +165,7 @@ sqlite3 *database;
             clientToAdd.city = clientCity;
             clientToAdd.province = clientProv;
             clientToAdd.postalcode = clientCodePostal;
+            clientToAdd.clientIDSAQ = clientIDSAQ;
             
             [self.clientArray addObject:clientToAdd];
             
@@ -168,7 +176,18 @@ sqlite3 *database;
         sqlite3_finalize(statement);
     }
     
-    NSLog(@"Number of clients : %i", numberOfRows);
+    /*
+    if([appDelegate.currLoggedUserRole  isEqual: @"admin"]){
+        self.clientArray = appDelegate.glClientArray;
+    } else {
+        NSPredicate *predicate = [NSPredicate predicateWithFormat:@"clientTitulaireID == %@ OR clientTempTitulaireID == %@", appDelegate.currLoggedUser,appDelegate.currLoggedUser];
+        NSArray *tmpClientLookup = [NSMutableArray arrayWithArray:[appDelegate.glClientArray filteredArrayUsingPredicate:predicate]];
+        self.clientArray = [NSMutableArray arrayWithArray:tmpClientLookup];
+    }
+ */
+
+    
+    //NSLog(@"Number of clients : %i", numberOfRows);
     
     appDelegate = [[UIApplication sharedApplication] delegate];
     
@@ -188,6 +207,7 @@ sqlite3 *database;
 }
 
 -(void) viewWillAppear:(BOOL)animated {
+    
     
     self.clientArray = [[NSMutableArray alloc] init];
     
@@ -226,6 +246,7 @@ sqlite3 *database;
             NSString * clientCity;
             NSString * clientProv;
             NSString * clientCodePostal;
+            NSString * clientIDSAQ;
             
             /*
              1-clientID INT PRIMARY KEY,
@@ -256,6 +277,7 @@ sqlite3 *database;
              26-clientNoMembre TEXT,
              27-clientEnvoiFact INT
              */
+     
             
             columnData = (char *)sqlite3_column_text(statement, 0);
             clientID = [[NSString alloc] initWithUTF8String:columnData];
@@ -281,6 +303,10 @@ sqlite3 *database;
             columnData = (char *)sqlite3_column_text(statement, 10);
             clientTel = [[NSString alloc] initWithUTF8String:columnData];
             
+            columnData = (char *)sqlite3_column_text(statement, 17);
+            clientIDSAQ = [[NSString alloc] initWithUTF8String:columnData];
+            
+            
             columnIntValue = (int)sqlite3_column_int(statement, 16);
             if(columnIntValue == 1){
                 clientType = @"Hotel";
@@ -304,6 +330,7 @@ sqlite3 *database;
             clientToAdd.city = clientCity;
             clientToAdd.province = clientProv;
             clientToAdd.postalcode = clientCodePostal;
+            clientToAdd.clientIDSAQ = clientIDSAQ;
             
             [self.clientArray addObject:clientToAdd];
             

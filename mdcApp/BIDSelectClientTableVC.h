@@ -8,14 +8,13 @@
 
 #import <UIKit/UIKit.h>
 #import <sqlite3.h>
-#import "PRELocalDBTools.h"
+//#import "PRELocalDBTools.h"
 #import "Client.h"
 
 @interface BIDSelectClientTableVC : UITableViewController <UISearchBarDelegate, UISearchDisplayDelegate>
 
 @property (nonatomic,strong) NSMutableArray *clientArray;
 @property (strong,nonatomic) NSMutableArray *filteredClientArray;
-//@property (strong, nonatomic) IBOutlet UISearchBar *clientSearchBar;
 @property (strong, nonatomic) IBOutlet UISearchBar *clientSearchBar;
 @property (strong,nonatomic) NSString *pickupSource;
 

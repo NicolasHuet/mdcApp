@@ -8,6 +8,7 @@
 
 #import "BIDOrdersTableViewController.h"
 #import "MDCAppDelegate.h"
+#import "Client.h"
 
 @implementation BIDOrdersTableViewController
 
@@ -25,6 +26,8 @@ NSData *jsonData;
 NSData *jsonDataForModified;
 NSData *jsonDataReservations;
 NSData *jsonDataForModifiedReservations;
+
+MBProgressHUD *hud;
 
 - (NSString *)dataFilePath
 {
@@ -48,27 +51,36 @@ NSData *jsonDataForModifiedReservations;
     
     [self reloadViewFromDatabase];
     
-    //int numberOfRows = 0;
+    appDelegate = [[UIApplication sharedApplication] delegate];
+    
+    self.tableView.rowHeight = 70;
+    self.clearsSelectionOnViewWillAppear = NO;
     
     CGRect newBounds = self.tableView.bounds;
     newBounds.origin.y = newBounds.origin.y + orderSearchbar.bounds.size.height;
     self.tableView.bounds = newBounds;
     
-    appDelegate = [[UIApplication sharedApplication] delegate];
-    
-    appDelegate.ordersViewNeedsRefreshing = NO;
-    self.tableView.rowHeight = 70;
-    self.clearsSelectionOnViewWillAppear = NO;
-    
     UIEdgeInsets inset = UIEdgeInsetsMake(5, 0, 0, 0);
     self.tableView.contentInset = inset;
+    
+    appDelegate.ordersViewNeedsRefreshing = NO;
     
     // Reload the table
     [[self tableView] reloadData];
 }
 
+- (void)viewWillDisappear:(BOOL)animated {
+    //sqlite3_close(database);
+}
+
 - (void) viewWillAppear:(BOOL)animated {
     [super viewWillAppear:YES];
+    
+    if (sqlite3_open([[self dataFilePath] UTF8String], &database)
+        != SQLITE_OK) {
+        sqlite3_close(database);
+        NSAssert(0, @"Failed to open database");
+    }
     
     if(appDelegate.ordersViewNeedsRefreshing) {
         [self reloadViewFromDatabase];
@@ -80,12 +92,6 @@ NSData *jsonDataForModifiedReservations;
 
 - (void) reloadViewFromDatabase {
     self.orderArray = [[NSMutableArray alloc] init];
-    
-    if (sqlite3_open([[self dataFilePath] UTF8String], &database)
-        != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Failed to open database");
-    }
     
     NSString *localquery = [NSString stringWithFormat:@"SELECT * FROM LocalCommandes ORDER BY commID DESC"];
     
@@ -173,6 +179,7 @@ NSData *jsonDataForModifiedReservations;
                 commCommentaire = [[NSString alloc] initWithUTF8String:columnData];
             }
             
+            
             NSString *clientQuery = [NSString stringWithFormat:@"SELECT * FROM Clients WHERE clientID = %@",commClientID];
             
             sqlite3_stmt *clientStmt;
@@ -198,6 +205,7 @@ NSData *jsonDataForModifiedReservations;
                      10-clientEmail TEXT,
                      11-clientTel1 TEXT,
                      */
+             
                     
                     columnData = (char *)sqlite3_column_text(clientStmt, 0);
                     clientID = [[NSString alloc] initWithUTF8String:columnData];
@@ -210,6 +218,17 @@ NSData *jsonDataForModifiedReservations;
                 
             }
             sqlite3_finalize(clientStmt);
+            
+            /*
+            NSPredicate *predicate = [NSPredicate predicateWithFormat:@"clientID == %@", commClientID];
+            NSArray *tmpClientLookup = [NSMutableArray arrayWithArray:[appDelegate.glClientArray filteredArrayUsingPredicate:predicate]];
+            if(tmpClientLookup.count > 0){
+                Client *tmpClient = [tmpClientLookup objectAtIndex:0];
+                commClientName = tmpClient.name;
+            } else {
+                commClientName = @"";
+            }
+             */
             
             
             Order *orderToAdd = [[Order alloc] init];
@@ -227,9 +246,6 @@ NSData *jsonDataForModifiedReservations;
             orderToAdd.commDataSource = @"local";
             
             [self.orderArray addObject:orderToAdd];
-            
-            [[self tableView] reloadData];
-            //numberOfRows = numberOfRows + 1;
             
         }
         sqlite3_finalize(localstatement);
@@ -322,6 +338,8 @@ NSData *jsonDataForModifiedReservations;
             columnIntValue = (int)sqlite3_column_int(statement, 14);
             commIsDraftModified = [NSString stringWithFormat:@"%i",columnIntValue];
             
+            
+            
             NSString *clientQuery = [NSString stringWithFormat:@"SELECT * FROM Clients WHERE clientID = %@",commClientID];
             
             sqlite3_stmt *clientStmt;
@@ -347,6 +365,7 @@ NSData *jsonDataForModifiedReservations;
                      10-clientEmail TEXT,
                      11-clientTel1 TEXT,
                      */
+             
                     
                     columnData = (char *)sqlite3_column_text(clientStmt, 0);
                     clientID = [[NSString alloc] initWithUTF8String:columnData];
@@ -359,6 +378,17 @@ NSData *jsonDataForModifiedReservations;
                 
             }
             sqlite3_finalize(clientStmt);
+            
+            /*
+            NSPredicate *predicate = [NSPredicate predicateWithFormat:@"clientID == %@", commClientID];
+            NSArray *tmpClientLookup = [NSMutableArray arrayWithArray:[appDelegate.glClientArray filteredArrayUsingPredicate:predicate]];
+            if(tmpClientLookup.count > 0){
+                Client *tmpClient = [tmpClientLookup objectAtIndex:0];
+                commClientName = tmpClient.name;
+            } else {
+                commClientName = @"";
+            }
+             */
             
             Order *orderToAdd = [[Order alloc] init];
             orderToAdd.commID = commID;
@@ -377,11 +407,8 @@ NSData *jsonDataForModifiedReservations;
             
             [self.orderArray addObject:orderToAdd];
             
-            //numberOfRows = numberOfRows + 1;
-            
         }
         sqlite3_finalize(statement);
-        sqlite3_close(database);
         
     }
     
@@ -429,13 +456,6 @@ NSData *jsonDataForModifiedReservations;
     } else {
         order = [orderArray objectAtIndex:indexPath.row];
     }
-    
-    if (sqlite3_open([[self dataFilePath] UTF8String], &database)
-        != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Failed to open database");
-    }
-    
     
     UILabel *clientNameLabel = (UILabel *)[cell viewWithTag:101];
     clientNameLabel.text = order.commClientName;
@@ -527,7 +547,7 @@ NSData *jsonDataForModifiedReservations;
         
     }
     sqlite3_finalize(statement);
-    sqlite3_close(database);
+    
     
     return cell;
 }
@@ -593,17 +613,6 @@ NSData *jsonDataForModifiedReservations;
 }
 
 
-/*
-#pragma mark - Navigation
-
-// In a storyboard-based application, you will often want to do a little preparation before navigation
-- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender
-{
-    // Get the new view controller using [segue destinationViewController].
-    // Pass the selected object to the new view controller.
-}
-*/
-
 - (IBAction)actionToNewOrder:(id)sender {
     
     MDCAppDelegate *appDelegate = [[UIApplication sharedApplication] delegate];
@@ -634,12 +643,6 @@ NSData *jsonDataForModifiedReservations;
 
 -(void) convertLocalOrdersToJson {
     NSMutableArray *jsonMuteArray = [[NSMutableArray alloc] init];
-    
-    if (sqlite3_open([[self dataFilePath] UTF8String], &database)
-        != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Failed to open database");
-    }
     
     NSString *localquery = [NSString stringWithFormat:@"SELECT * FROM LocalCommandes"];
     
@@ -712,8 +715,6 @@ NSData *jsonDataForModifiedReservations;
             } else {
                 commCommentaire = [[NSString alloc] initWithUTF8String:columnData];
             }
-            
-            
             
             NSMutableArray *orderItems = [[NSMutableArray alloc] init];
             
@@ -793,12 +794,6 @@ NSData *jsonDataForModifiedReservations;
 
 -(void) convertModifiedSynchedOrdersToJson {
     NSMutableArray *jsonMuteArray = [[NSMutableArray alloc] init];
-    
-    if (sqlite3_open([[self dataFilePath] UTF8String], &database)
-        != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Failed to open database");
-    }
     
     NSString *localquery = [NSString stringWithFormat:@"SELECT * FROM Commandes WHERE commIsDraftModified = 1"];
     
@@ -954,12 +949,6 @@ NSData *jsonDataForModifiedReservations;
 -(void) convertLocalReservationsToJson {
     NSMutableArray *jsonMuteArray = [[NSMutableArray alloc] init];
     
-    if (sqlite3_open([[self dataFilePath] UTF8String], &database)
-        != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Failed to open database");
-    }
-    
     NSString *localquery = [NSString stringWithFormat:@"SELECT * FROM LocalReservations"];
     
     sqlite3_stmt *localstatement;
@@ -1078,12 +1067,6 @@ NSData *jsonDataForModifiedReservations;
 
 -(void) convertModifiedSynchedReservationsToJson {
     NSMutableArray *jsonMuteArray = [[NSMutableArray alloc] init];
-    
-    if (sqlite3_open([[self dataFilePath] UTF8String], &database)
-        != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Failed to open database");
-    }
     
     NSString *localquery = [NSString stringWithFormat:@"SELECT * FROM Reservations WHERE commIsDraftModified = 1"];
     
@@ -1204,11 +1187,11 @@ NSData *jsonDataForModifiedReservations;
 
 -(void) submitLocalOrdersJson {
     
-    UIActivityIndicatorView *spinner = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
-    spinner.center = CGPointMake(384, 520);
-    spinner.hidesWhenStopped = YES;
-    [self.view addSubview:spinner];
-    [spinner startAnimating];
+    //UIActivityIndicatorView *spinner = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
+    //spinner.center = CGPointMake(384, 520);
+    //spinner.hidesWhenStopped = YES;
+    //[self.view addSubview:spinner];
+    //[spinner startAnimating];
     
     NSURLSessionConfiguration *defaultConfigObject = [NSURLSessionConfiguration defaultSessionConfiguration];
     NSURLSession *defaultSession = [NSURLSession sessionWithConfiguration: defaultConfigObject delegate: nil delegateQueue: [NSOperationQueue mainQueue]];
@@ -1249,7 +1232,7 @@ NSData *jsonDataForModifiedReservations;
                                                                
                                                                if ([[NSThread currentThread] isMainThread]){
                                                                    NSLog(@"In main thread--completion handler");
-                                                                   [spinner stopAnimating];
+                                                                   //[spinner stopAnimating];
                                                                    
                                                                }
                                                                else{
@@ -1267,11 +1250,11 @@ NSData *jsonDataForModifiedReservations;
 
 -(void) submitModifiedDraftOrdersJson {
     
-    UIActivityIndicatorView *spinner = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
-    spinner.center = CGPointMake(384, 520);
-    spinner.hidesWhenStopped = YES;
-    [self.view addSubview:spinner];
-    [spinner startAnimating];
+    //UIActivityIndicatorView *spinner = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
+    //spinner.center = CGPointMake(384, 520);
+    //spinner.hidesWhenStopped = YES;
+    //[self.view addSubview:spinner];
+    //[spinner startAnimating];
     
     NSURLSessionConfiguration *defaultConfigObject = [NSURLSessionConfiguration defaultSessionConfiguration];
     NSURLSession *defaultSession = [NSURLSession sessionWithConfiguration: defaultConfigObject delegate: nil delegateQueue: [NSOperationQueue mainQueue]];
@@ -1312,7 +1295,7 @@ NSData *jsonDataForModifiedReservations;
                                                                
                                                                if ([[NSThread currentThread] isMainThread]){
                                                                    NSLog(@"In main thread--completion handler");
-                                                                   [spinner stopAnimating];
+                                                                   //[spinner stopAnimating];
                                                                    
                                                                }
                                                                else{
@@ -1329,12 +1312,6 @@ NSData *jsonDataForModifiedReservations;
 }
 
 -(void) submitLocalReservationsJson {
-    
-    UIActivityIndicatorView *spinner = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
-    spinner.center = CGPointMake(384, 520);
-    spinner.hidesWhenStopped = YES;
-    [self.view addSubview:spinner];
-    [spinner startAnimating];
     
     NSURLSessionConfiguration *defaultConfigObject = [NSURLSessionConfiguration defaultSessionConfiguration];
     NSURLSession *defaultSession = [NSURLSession sessionWithConfiguration: defaultConfigObject delegate: nil delegateQueue: [NSOperationQueue mainQueue]];
@@ -1375,7 +1352,6 @@ NSData *jsonDataForModifiedReservations;
                                                                
                                                                if ([[NSThread currentThread] isMainThread]){
                                                                    NSLog(@"In main thread--completion handler");
-                                                                   [spinner stopAnimating];
                                                                    
                                                                }
                                                                else{
@@ -1392,12 +1368,6 @@ NSData *jsonDataForModifiedReservations;
 }
 
 -(void) submitModifiedReservationsJson {
-    
-    UIActivityIndicatorView *spinner = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
-    spinner.center = CGPointMake(384, 520);
-    spinner.hidesWhenStopped = YES;
-    [self.view addSubview:spinner];
-    [spinner startAnimating];
     
     NSURLSessionConfiguration *defaultConfigObject = [NSURLSessionConfiguration defaultSessionConfiguration];
     NSURLSession *defaultSession = [NSURLSession sessionWithConfiguration: defaultConfigObject delegate: nil delegateQueue: [NSOperationQueue mainQueue]];
@@ -1438,7 +1408,7 @@ NSData *jsonDataForModifiedReservations;
                                                                
                                                                if ([[NSThread currentThread] isMainThread]){
                                                                    NSLog(@"In main thread--completion handler");
-                                                                   [spinner stopAnimating];
+                                                                   //[spinner stopAnimating];
                                                                    
                                                                }
                                                                else{
@@ -1456,21 +1426,7 @@ NSData *jsonDataForModifiedReservations;
 
 - (void) ordUpdateCommandesTable {
     
-    UIActivityIndicatorView *spinner = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
-    spinner.center = CGPointMake(384, 520);
-    spinner.hidesWhenStopped = YES;
-    [self.view addSubview:spinner];
-    [spinner startAnimating];
-    
     NSString *repID = appDelegate.currLoggedUser;
-    
-    char *errorMsg = nil;
-    
-    if (sqlite3_open([[self dataFilePath] UTF8String], &database)
-        != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Failed to open database");
-    }
     
     NSURLSessionConfiguration *defaultConfigObject = [NSURLSessionConfiguration defaultSessionConfiguration];
     NSURLSession *defaultSession = [NSURLSession sessionWithConfiguration: defaultConfigObject delegate: nil delegateQueue: [NSOperationQueue mainQueue]];
@@ -1580,6 +1536,8 @@ NSData *jsonDataForModifiedReservations;
                                                                 14-commLastUpdated TEXT
                                                                 */
                                                                
+                                                               char *errorMsg = nil;
+                                                               
                                                                if (sqlite3_step(stmt) != SQLITE_DONE)
                                                                    NSAssert(0, @"Error updating table: %s", errorMsg);
                                                                sqlite3_finalize(stmt);
@@ -1593,8 +1551,8 @@ NSData *jsonDataForModifiedReservations;
                                                                
                                                                if ([[NSThread currentThread] isMainThread]){
                                                                    NSLog(@"In main thread--completion handler");
-                                                                   [self refreshTableViewContent];
-                                                                   [spinner stopAnimating];
+                                                                   //[self refreshTableViewContent];
+                                                                   //[spinner stopAnimating];
                                                                    
                                                                }
                                                                else{
@@ -1609,20 +1567,6 @@ NSData *jsonDataForModifiedReservations;
 }
 
 - (void) ordUpdateCommandeItemsTable {
-    
-    UIActivityIndicatorView *spinner = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
-    spinner.center = CGPointMake(384, 520);
-    spinner.hidesWhenStopped = YES;
-    [self.view addSubview:spinner];
-    [spinner startAnimating];
-    
-    char *errorMsg = nil;
-    
-    if (sqlite3_open([[self dataFilePath] UTF8String], &database)
-        != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Failed to open database");
-    }
     
     NSURLSessionConfiguration *defaultConfigObject = [NSURLSessionConfiguration defaultSessionConfiguration];
     NSURLSession *defaultSession = [NSURLSession sessionWithConfiguration: defaultConfigObject delegate: nil delegateQueue: [NSOperationQueue mainQueue]];
@@ -1679,6 +1623,8 @@ NSData *jsonDataForModifiedReservations;
                                                                 4-commItemVinQte INT
                                                                 */
                                                                
+                                                               char *errorMsg = nil;
+                                                               
                                                                if (sqlite3_step(stmt) != SQLITE_DONE)
                                                                    NSAssert(0, @"Error updating table: %s", errorMsg);
                                                                sqlite3_finalize(stmt);
@@ -1689,9 +1635,9 @@ NSData *jsonDataForModifiedReservations;
                                                                
                                                                if ([[NSThread currentThread] isMainThread]){
                                                                    NSLog(@"In main thread--completion handler");
-                                                                    //[[self tableView] reloadData];
+                                                        
+                                                                   [hud hide:YES];
                                                                    [self refreshTableViewContent];
-                                                                   [spinner stopAnimating];
                                                                }
                                                                else{
                                                                    NSLog(@"Not in main thread--completion handler");
@@ -1705,20 +1651,7 @@ NSData *jsonDataForModifiedReservations;
 
 - (void) ordUpdateReservationsTable {
     
-    UIActivityIndicatorView *spinner = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
-    spinner.center = CGPointMake(384, 520);
-    spinner.hidesWhenStopped = YES;
-    [self.view addSubview:spinner];
-    [spinner startAnimating];
-    
     NSString *repID = appDelegate.currLoggedUser;
-    char *errorMsg = nil;
-    
-    if (sqlite3_open([[self dataFilePath] UTF8String], &database)
-        != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Failed to open database");
-    }
     
     NSURLSessionConfiguration *defaultConfigObject = [NSURLSessionConfiguration defaultSessionConfiguration];
     NSURLSession *defaultSession = [NSURLSession sessionWithConfiguration: defaultConfigObject delegate: nil delegateQueue: [NSOperationQueue mainQueue]];
@@ -1805,6 +1738,8 @@ NSData *jsonDataForModifiedReservations;
                                                                 14-commLastUpdated TEXT
                                                                 */
                                                                
+                                                               char *errorMsg = nil;
+                                                               
                                                                if (sqlite3_step(stmt) != SQLITE_DONE)
                                                                    NSAssert(0, @"Error updating table: %s", errorMsg);
                                                                sqlite3_finalize(stmt);
@@ -1817,8 +1752,6 @@ NSData *jsonDataForModifiedReservations;
                                                                
                                                                if ([[NSThread currentThread] isMainThread]){
                                                                    NSLog(@"In main thread--completion handler");
-                                                                   [self refreshTableViewContent];
-                                                                   [spinner stopAnimating];
                                                                }
                                                                else{
                                                                    NSLog(@"Not in main thread--completion handler");
@@ -1830,20 +1763,6 @@ NSData *jsonDataForModifiedReservations;
 }
 
 - (void) ordUpdateReservationItemsTable {
-    
-    UIActivityIndicatorView *spinner = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
-    spinner.center = CGPointMake(384, 520);
-    spinner.hidesWhenStopped = YES;
-    [self.view addSubview:spinner];
-    [spinner startAnimating];
-    
-    char *errorMsg = nil;
-    
-    if (sqlite3_open([[self dataFilePath] UTF8String], &database)
-        != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Failed to open database");
-    }
     
     NSURLSessionConfiguration *defaultConfigObject = [NSURLSessionConfiguration defaultSessionConfiguration];
     NSURLSession *defaultSession = [NSURLSession sessionWithConfiguration: defaultConfigObject delegate: nil delegateQueue: [NSOperationQueue mainQueue]];
@@ -1901,6 +1820,8 @@ NSData *jsonDataForModifiedReservations;
                                                                 4-commItemVinQte INT
                                                                 */
                                                                
+                                                               char *errorMsg = nil;
+                                                               
                                                                if (sqlite3_step(stmt) != SQLITE_DONE)
                                                                    NSAssert(0, @"Error updating table: %s", errorMsg);
                                                                sqlite3_finalize(stmt);
@@ -1911,8 +1832,8 @@ NSData *jsonDataForModifiedReservations;
                                                                
                                                                if ([[NSThread currentThread] isMainThread]){
                                                                    NSLog(@"In main thread--completion handler");
-                                                                   [self refreshTableViewContent];
-                                                                   [spinner stopAnimating];
+                                                                   //[spinner stopAnimating];
+                                                                   //[self refreshTableViewContent];
                                                                }
                                                                else{
                                                                    NSLog(@"Not in main thread--completion handler");
@@ -1928,13 +1849,6 @@ NSData *jsonDataForModifiedReservations;
     self.orderArray = [[NSMutableArray alloc] init];
     
     int numberOfRows = 0;
-    
-    
-    if (sqlite3_open([[self dataFilePath] UTF8String], &database)
-        != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Failed to open database");
-    }
     
     NSString *localquery = [NSString stringWithFormat:@"SELECT * FROM LocalCommandes ORDER BY commID DESC"];
     
@@ -2035,8 +1949,6 @@ NSData *jsonDataForModifiedReservations;
             orderToAdd.commDataSource = @"local";
             
             [self.orderArray addObject:orderToAdd];
-            
-            numberOfRows = numberOfRows + 1;
             
         }
         sqlite3_finalize(localstatement);
@@ -2162,12 +2074,6 @@ NSData *jsonDataForModifiedReservations;
 }
 
 -(void) ordResetLocalOrderDBs {
-    
-    if (sqlite3_open([[self dataFilePath] UTF8String], &database)
-        != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Failed to open database");
-    }
     
     char *errorMsg;
     
@@ -2317,8 +2223,6 @@ NSData *jsonDataForModifiedReservations;
         NSAssert(0, @"Error creating table: %s", errorMsg);
     }
     
-    sqlite3_close(database);
-    
 }
 
 - (void)searchDisplayController:(UISearchDisplayController *)controller didLoadSearchResultsTableView:(UITableView *)tableView
@@ -2333,9 +2237,6 @@ NSData *jsonDataForModifiedReservations;
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     NSString *tmpUser = [[defaults objectForKey:@"repID_preference"] lowercaseString];
     NSString *tmpPassword = [defaults objectForKey:@"password"];
-    
-    //NSLog(@"User: %@",tmpUser);
-    //NSLog(@"Psw: %@",tmpPassword);
     
     NSURLSessionConfiguration *defaultConfigObject = [NSURLSessionConfiguration defaultSessionConfiguration];
     NSURLSession *defaultSession = [NSURLSession sessionWithConfiguration: defaultConfigObject delegate: nil delegateQueue: [NSOperationQueue mainQueue]];
@@ -2391,18 +2292,27 @@ NSData *jsonDataForModifiedReservations;
 }
 
 - (void) completeSynch {
+    
+    hud                         = [MBProgressHUD showHUDAddedTo:self.view animated:YES];
+    hud.detailsLabelText        = @"Synchronisation des données";
+    hud.dimBackground           = YES;
+    hud.labelText               = @"SVP Patienter";
+    hud.mode                    = MBProgressHUDModeIndeterminate;
+    
+    appDelegate.reservationsViewNeedsRefreshing = YES;
+    
     [self submitLocalOrdersJson];
     [self submitModifiedDraftOrdersJson];
+    [self submitLocalReservationsJson];
+    [self submitModifiedReservationsJson];
     
     [self ordResetLocalOrderDBs];
     
-    [self performSelector:@selector(ordUpdateCommandesTable) withObject:nil afterDelay:2.0];
-    [self performSelector:@selector(ordUpdateReservationsTable) withObject:nil afterDelay:2.0];
+    [self performSelector:@selector(ordUpdateCommandesTable) withObject:nil afterDelay:3.0];
+    [self performSelector:@selector(ordUpdateReservationsTable) withObject:nil afterDelay:3.0];
+    [self performSelector:@selector(ordUpdateReservationItemsTable) withObject:nil afterDelay:3.0];
     
-    [self performSelector:@selector(ordUpdateCommandeItemsTable) withObject:nil afterDelay:2.0];
-    [self performSelector:@selector(ordUpdateReservationItemsTable) withObject:nil afterDelay:2.0];
-    
-    //[self performSelector:@selector(refreshTableViewContent) withObject:nil afterDelay:10.0];
+    [self performSelector:@selector(ordUpdateCommandeItemsTable) withObject:nil afterDelay:15.0];
 }
 
 - (void)syncErrorDetected {
@@ -2425,6 +2335,10 @@ NSData *jsonDataForModifiedReservations;
             }
             break;
     }
+}
+
+- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
+    return NO;
 }
 
 @end

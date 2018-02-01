@@ -14,6 +14,9 @@
 @synthesize clientSearchBar;
 MDCAppDelegate *appDelegate;
 sqlite3 *database;
+
+NSUserDefaults *userDefaults;
+
 - (id)initWithStyle:(UITableViewStyle)style
 {
     self = [super initWithStyle:style];
@@ -35,31 +38,49 @@ sqlite3 *database;
     newBounds.origin.y = newBounds.origin.y + clientSearchBar.bounds.size.height;
     self.tableView.bounds = newBounds;
     
+    
+    
     appDelegate = [[UIApplication sharedApplication] delegate];
-    NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
+    userDefaults = [NSUserDefaults standardUserDefaults];
     appDelegate.currLoggedUser = [userDefaults objectForKey:@"UserCode"];
     appDelegate.currLoggedUserRole = [userDefaults objectForKey:@"UserRole"];
     appDelegate.syncServer = [userDefaults objectForKey:@"SrvAddr"];
+    
 
     [self reloadViewFromDatabase];
-    appDelegate.clientsViewNeedsRefreshing = NO;
+    //appDelegate.clientsViewNeedsRefreshing = NO;
     
-    appDelegate = [[UIApplication sharedApplication] delegate];
+    //appDelegate = [[UIApplication sharedApplication] delegate];
+    
     self.tableView.rowHeight = 124;
     self.clearsSelectionOnViewWillAppear = NO;
     
     // Reload the table
     [[self tableView] reloadData];
+    
+    self.filteredClientArray = [NSMutableArray arrayWithCapacity:[clientArray count]];
 }
 -(void) viewWillAppear:(BOOL)animated {
     [super viewWillAppear:YES];
     
-    if(appDelegate.clientsViewNeedsRefreshing == YES){
-        [self reloadViewFromDatabase];
-        appDelegate.clientsViewNeedsRefreshing = NO;
+    if([appDelegate.glClientArray count] > 0){
+        //clientArray = appDelegate.glClientArray;
+    } else {
+        appDelegate.glClientArray = [[NSMutableArray alloc]init];
+        NSData *data = [userDefaults objectForKey:@"clientsTable"];
+        appDelegate.glClientArray = [[NSKeyedUnarchiver unarchiveObjectWithData:data] mutableCopy];
     }
     
+    //clientArray = appDelegate.glClientArray;
+    
+    //if(appDelegate.clientsViewNeedsRefreshing == YES){
+        //[self reloadViewFromDatabase];
+        //appDelegate.clientsViewNeedsRefreshing = NO;
+    //}
+    
     [[self tableView] reloadData];
+    
+    self.filteredClientArray = [NSMutableArray arrayWithCapacity:[clientArray count]];
 }
 
 - (void) reloadViewFromDatabase {
@@ -171,6 +192,7 @@ sqlite3 *database;
                 clientTypeFact = @"Courriel et poste (mens.)";
             }
             columnData = (char *)sqlite3_column_text(statement, 24);
+            
             clientJourLivr = [[NSString alloc] initWithUTF8String:columnData];
             Client *clientToAdd = [[Client alloc] init];
             clientToAdd.clientID = clientID;

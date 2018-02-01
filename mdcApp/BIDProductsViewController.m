@@ -19,6 +19,8 @@ Client *currentClient;
 sqlite3 *database;
 MDCAppDelegate *appDelegate;
 
+NSUserDefaults *userDefaults;
+
 - (id)initWithStyle:(UITableViewStyle)style
 {
     self = [super initWithStyle:style];
@@ -44,6 +46,7 @@ MDCAppDelegate *appDelegate;
     self.tableView.rowHeight = 90;
     self.clearsSelectionOnViewWillAppear = NO;
     appDelegate = [[UIApplication sharedApplication] delegate];
+    userDefaults = [NSUserDefaults standardUserDefaults];
     
     [self reloadViewFromDatabase];
     appDelegate.productsViewNeedsRefreshing = NO;
@@ -57,10 +60,20 @@ MDCAppDelegate *appDelegate;
     
     [super viewWillAppear:YES];
     
-    if(appDelegate.productsViewNeedsRefreshing) {
-        [self reloadViewFromDatabase];
-        appDelegate.productsViewNeedsRefreshing = NO;
+    //if(appDelegate.productsViewNeedsRefreshing) {
+       // [self reloadViewFromDatabase];
+        //appDelegate.productsViewNeedsRefreshing = NO;
+   // }
+    
+    if([appDelegate.glProductArray count] > 0){
+        //clientArray = appDelegate.glClientArray;
+    } else {
+        appDelegate.glProductArray = [[NSMutableArray alloc]init];
+        NSData *data = [userDefaults objectForKey:@"productsTable"];
+        appDelegate.glProductArray = [[NSKeyedUnarchiver unarchiveObjectWithData:data] mutableCopy];
     }
+    
+    //self.productArray = appDelegate.glProductArray;
     
     [[self tableView] reloadData];
     
@@ -229,7 +242,7 @@ MDCAppDelegate *appDelegate;
     //NSLog(@"prepareForSeqgue: %@ - %@",segue.identifier, [sender reuseIdentifier]);
     if ([segue.identifier isEqualToString:@"toProdDetail"])
     {
-        Product *product = nil;
+        Product *product = [[Product alloc]init];
         
         if (self.searchDisplayController.isActive)
         {

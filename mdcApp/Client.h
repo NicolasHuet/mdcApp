@@ -8,7 +8,7 @@
 
 #import <Foundation/Foundation.h>
 
-@interface Client : NSObject
+@interface Client : NSObject <NSCoding>
 
 @property (nonatomic, strong) NSString *clientID;
 @property (nonatomic, strong) NSString *name;
@@ -27,5 +27,7 @@
 @property (nonatomic, strong) NSString *clientTypeFact;
 @property (nonatomic, strong) NSString *clientJourLivr;
 
+@property (nonatomic, strong) NSString *clientTitulaireID;
+@property (nonatomic, strong) NSString *clientTempTitulaireID;
 
 @end

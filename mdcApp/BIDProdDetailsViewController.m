@@ -19,6 +19,8 @@
 @synthesize cartArrayIndex;
 @synthesize currProductQty;
 
+sqlite3 *database;
+
 - (id)initWithStyle:(UITableViewStyle)style
 {
     self = [super initWithStyle:style];
@@ -26,6 +28,14 @@
         // Custom initialization
     }
     return self;
+}
+
+- (NSString *)dataFilePath
+{
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(
+                                                         NSDocumentDirectory, NSUserDomainMask, YES);
+    NSString *documentsDirectory = [paths objectAtIndex:0];
+    return [documentsDirectory stringByAppendingPathComponent:@"mdc.sqlite"];
 }
 
 - (void)viewDidLoad
@@ -67,6 +77,7 @@
     NSLog(@"vinFraisTimbrage: %@",self.product.vinFraisEtiq);
     NSLog(@"vinFraisBout: %@",self.product.vinFraisBout);
     
+    
     tmpAmount = [self.product.vinPrixAchat doubleValue];
     self.prodPrixAchat.text = [NSString stringWithFormat:@"$%.2f", tmpAmount];
     
@@ -78,12 +89,15 @@
     
     double tmpCalc = [self.product.vinPrixAchat doubleValue] + [self.product.vinFraisEtiq doubleValue] + [self.product.vinFraisBout doubleValue];
     
+    
     self.prodSellPrice.text = [NSString stringWithFormat:@"$ %.2f", tmpCalc];
     
-    self.prodInitialStock.text = self.product.vinQteAchat;
-    self.prodEmpaquement.text = self.product.vinEmpaq;
-    self.prodFormat.text = self.product.vinFormat;
+    self.prodInitialStock.text = [NSString stringWithFormat:@"%@", self.product.vinQteAchat];
+    self.prodEmpaquement.text = [NSString stringWithFormat:@"%@", self.product.vinEmpaq];
+    self.prodFormat.text = [NSString stringWithFormat:@"%@", self.product.vinFormat];
     
+    
+     
     if(([self.product.vinDateAchat  isEqual:@""]) || ([self.product.vinDateAchat  isEqual:@"0000-00-00"])){
         self.prodJrsLibere.text = @"N/A";
     } else {
@@ -97,17 +111,72 @@
     }
     
     
+    [self determineMargeDiscretionnaire:self.product.vinID];
+    int tmpDiscrReserv = [self.prodMargeReserv.text intValue];
     
     int tmpInitialStock = [self.product.vinQteAchat intValue];
     int tmpAssigned = [self.product.vinTotalAssigned intValue];
     int tmpStock = tmpInitialStock - tmpAssigned;
     self.prodCurrStock.text = [NSString stringWithFormat:@"%i",tmpStock];
     
-    if([self.prodCurrStock.text intValue] < 1){
+    if((tmpStock + tmpDiscrReserv) < 1){
         self.addToCartButton.userInteractionEnabled = NO;
     }
     
+    
+    
 }
+
+- (void)determineMargeDiscretionnaire:(NSString *)produitID {
+    if (sqlite3_open([[self dataFilePath] UTF8String], &database)
+        != SQLITE_OK) {
+        sqlite3_close(database);
+        NSAssert(0, @"Failed to open database");
+    }
+    
+    //NSString *query = [NSString stringWithFormat:@"SELECT * FROM Vins WHERE vinDisponible = 1 AND vinEpuise = 0 ORDER BY vinNom"];
+    NSString *query = [NSString stringWithFormat:@"SELECT SUM(commItemVinQte) AS totalInReservations FROM ReservationItems WHERE commItemVinID = %@", produitID];
+    
+    sqlite3_stmt *statement;
+    int vinMargeRI = 0;
+    int vinMargeLRI = 0;
+    
+    if (sqlite3_prepare_v2(database, [query UTF8String],
+                           -1, &statement, nil) == SQLITE_OK)
+    {
+        while (sqlite3_step(statement) == SQLITE_ROW) {
+            //int row = sqlite3_column_int(statement, 0);
+            
+            int columnIntValue;
+            
+            columnIntValue = (int)sqlite3_column_int(statement, 0);
+            vinMargeRI = columnIntValue;
+            
+        }
+        
+    }
+    
+    query = [NSString stringWithFormat:@"SELECT SUM(commItemVinQte) AS totalInReservations FROM LocalReservationItems WHERE commItemVinID = %@", produitID];
+    
+    if (sqlite3_prepare_v2(database, [query UTF8String],
+                           -1, &statement, nil) == SQLITE_OK)
+    {
+        while (sqlite3_step(statement) == SQLITE_ROW) {
+            //int row = sqlite3_column_int(statement, 0);
+            
+            int columnIntValue;
+            
+            columnIntValue = (int)sqlite3_column_int(statement, 0);
+            vinMargeLRI = columnIntValue;
+            
+        }
+        
+    }
+    int totalMargeDisc = vinMargeRI + vinMargeLRI;
+    //NSLog(@"%i", totalMargeDisc);
+    self.prodMargeReserv.text = [NSString stringWithFormat:@"%i", totalMargeDisc];
+}
+
 
 - (void)didReceiveMemoryWarning
 {
@@ -224,6 +293,7 @@
         if(testForZero > 0){
             [appDelegate.reservProducts addObject:self.product];
             [appDelegate.reservQties addObject:self.addQty.text];
+            appDelegate.canSubmitReservationDoc = NO;
             [appDelegate.reservTransType addObject:@"BuyNow"];
             
             UIActionSheet *actionSheet = [[UIActionSheet alloc] initWithTitle:@"Item Ajouté à la réservation avec succès" delegate:self cancelButtonTitle:nil destructiveButtonTitle:nil otherButtonTitles:@"OK", nil];
@@ -254,6 +324,7 @@
         int testForZero = [self.addQty.text intValue];
         
         if(testForZero > 0){
+            appDelegate.canSubmitReservationDoc = NO;
             [appDelegate.reservQties replaceObjectAtIndex:self.cartArrayIndex withObject:self.addQty.text];
             [self.navigationController popViewControllerAnimated:YES];
         }

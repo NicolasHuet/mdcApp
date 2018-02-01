@@ -23,6 +23,8 @@ NSString *currentDelaiPickup;
 NSMutableArray *productList;
 MDCAppDelegate *appDelegate;
 
+NSData *jsonData;
+
 sqlite3 *database;
 
 double varSubTotal;
@@ -71,10 +73,16 @@ double varTotal;
     
     appDelegate = [[UIApplication sharedApplication] delegate];
     
+    appDelegate.canSubmitReservationDoc = NO;
     
     
     if(self.selectedOrder != nil) {
         
+        if(([self.selectedOrder.commDataSource  isEqual: @"backend"]) && ([self.selectedOrder.commIsDraftModified  isEqual: @"0"])){
+            appDelegate.canSubmitReservationDoc = YES;
+        } else {
+            appDelegate.canSubmitReservationDoc = NO;
+        }
         appDelegate.reservCommentaire = self.selectedOrder.commCommentaire;
         
         NSString *query;
@@ -391,8 +399,8 @@ double varTotal;
         
         appDelegate.reservProducts = orderProductsArray;
         appDelegate.reservQties = orderQtiesArray;
-        
-        
+    } else {
+        appDelegate.canSubmitReservationDoc = NO;
     }
     
     productList = appDelegate.reservProducts;
@@ -629,11 +637,6 @@ double varTotal;
         [userNameToolbar sizeToFit];
         commCommentaire.inputAccessoryView = userNameToolbar;
         
-        
-        
-        
-        
-        
     }
     if([indexPath section] == 2){
         static NSString *CellIdentifier = @"itemCell";
@@ -705,15 +708,6 @@ double varTotal;
         [actionSheet showInView:self.view];
     }
     
-    //if(appDelegate.reservProducts.count < 1) {
-        //doSubmit = NO;
-        //UIActionSheet *actionSheet = [[UIActionSheet alloc] initWithTitle:@"Vous devez ajouter au moins 1 produit !" delegate:self cancelButtonTitle:nil destructiveButtonTitle:@"OK" otherButtonTitles:nil, nil];
-        
-        //actionSheet.tag = 5;
-        
-        //[actionSheet showInView:self.view];
-    //}
-    
     if(doSubmit){
         
         UIActionSheet *actionSheet = [[UIActionSheet alloc] initWithTitle:@"Êtes-vous certain de vouloir soumettre la reservation? (Rappelez-vous que les réservations affectent les stocks aussi)." delegate:self cancelButtonTitle:nil destructiveButtonTitle:@"Soumettre" otherButtonTitles:@"Non", nil];
@@ -721,6 +715,32 @@ double varTotal;
         actionSheet.tag = 2;
         
         [actionSheet showInView:self.view];
+    }
+}
+
+- (IBAction)doSubmitReservDocByMail:(id)sender {
+    
+    bool doSubmit = YES;
+    
+    if(appDelegate.canSubmitReservationDoc == NO) {
+        doSubmit = NO;
+        UIActionSheet *actionSheet = [[UIActionSheet alloc] initWithTitle:@"Le document n'est pas synchronisé ! Veuillez transmettre les informations / changements et recommencer " delegate:self cancelButtonTitle:nil destructiveButtonTitle:@"OK" otherButtonTitles:nil, nil];
+        
+        actionSheet.tag = 4;
+        
+        [actionSheet showInView:self.view];
+    }
+    
+    if(doSubmit){
+        
+        UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:@"Êtes-vous certain de vouloir transmettre le bon de réservation? (Vous devez être branché à Internet (Wi-Fi ou partage)."
+                                                            message:@"Veuillez entrer l'adresse courriel ou le bon de réservation sera envoyé"
+                                                           delegate:self
+                                                  cancelButtonTitle:@"Cancel"
+                                                  otherButtonTitles:@"Envoyer", nil];
+        
+        [alertView setAlertViewStyle:UIAlertViewStylePlainTextInput];
+        [alertView show];
     }
 }
 
@@ -820,29 +840,8 @@ double varTotal;
         case 6:
             if(buttonIndex == 0){
                 NSLog(@"Pressed button 0");
-                if ([self.commCommentaire.text length] > 0 || self.commCommentaire.text != nil || [self.commCommentaire.text isEqual:@""] == FALSE){
-                    appDelegate.reservCommentaire = self.commCommentaire.text;
-                }
-                NSString * statusSave = [self saveOrder:@"Draft"];
-                if(![statusSave isEqual: @"Error"]){
-                    NSInteger arraySize = [appDelegate.reservProducts count];
-                    for(int i = 0; i < arraySize; i++){
-                        Product *currProduct = nil;
-                        currProduct = [appDelegate.reservProducts objectAtIndex:i];
-                        NSString *currProdID = currProduct.vinID;
-                        NSString *currQty = [appDelegate.reservQties objectAtIndex:i];
-                        
-                        [self saveOrderItem:statusSave prodID:currProdID qty:currQty];
-                    }
-                }
                 
-                MDCAppDelegate *appDelegate = [[UIApplication sharedApplication] delegate];
-                appDelegate.reservationActiveClient = nil;
-                appDelegate.reservProducts = nil;
-                appDelegate.reservQties = nil;
-                appDelegate.reservCommentaire = nil;
-                //[[self tableView] reloadData];
-                [self.navigationController popToRootViewControllerAnimated:YES];
+                
                 
             } else if(buttonIndex == 1){
                 NSLog(@"Pressed button 1 - 'Non' - Do nothing");
@@ -854,6 +853,75 @@ double varTotal;
         default:
             break;
     }
+}
+
+- (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex
+{
+    if(buttonIndex == 1)
+    {
+        UITextField *addressField = [alertView textFieldAtIndex:0];
+        NSLog(@"%@", addressField.text);
+        
+        if([self NSStringIsValidEmail:addressField.text]){
+            NSURLSessionConfiguration *defaultConfigObject = [NSURLSessionConfiguration defaultSessionConfiguration];
+            NSURLSession *defaultSession = [NSURLSession sessionWithConfiguration: defaultConfigObject delegate: nil delegateQueue: [NSOperationQueue mainQueue]];
+            
+            NSString *fullURL = [NSString stringWithFormat:@"%@/reservationGenFacturePDF.php?commid=%@&action=mail&mailToAddr=%@", appDelegate.syncServer, self.selectedOrder.commID, addressField.text ];
+            NSURL * url = [NSURL URLWithString:fullURL];
+            NSMutableURLRequest * urlRequest = [NSMutableURLRequest requestWithURL:url];
+            NSString * params = @"";
+            [urlRequest setHTTPMethod:@"GET"];
+            [urlRequest setHTTPBody:[params dataUsingEncoding:NSUTF8StringEncoding]];
+            
+            NSURLSessionDataTask * dataTask =[defaultSession dataTaskWithRequest:urlRequest
+                                                               completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+                                                                   NSLog(@"Response:%@ %@\n", response, error);
+                                                                   if(error == nil){
+                                                                   }
+                                                                   
+                                                                   NSMutableArray *rows  = [NSJSONSerialization JSONObjectWithData: data options: NSJSONReadingMutableContainers error: &error];
+                                                                   
+                                                                   dispatch_async(dispatch_get_main_queue(), ^{
+                                                                       
+                                                                       if ([[NSThread currentThread] isMainThread]){
+                                                                           NSLog(@"In main thread--completion handler");
+                                                                           NSLog(@"Everything is fine. Moving on...");
+                                                                           UIActionSheet *actionSheet = [[UIActionSheet alloc] initWithTitle:@"Le document a été transmis avec succès" delegate:self cancelButtonTitle:nil destructiveButtonTitle:@"OK" otherButtonTitles:nil, nil];
+                                                                           
+                                                                           actionSheet.tag = 4;
+                                                                           
+                                                                           [actionSheet showInView:self.view];
+                                                                           
+                                                                       }
+                                                                       else{
+                                                                           NSLog(@"Not in main thread--completion handler");
+                                                                       }
+                                                                   });
+                                                                   
+                                                               }];
+            [dataTask resume];
+        } else {
+            UIActionSheet *actionSheet = [[UIActionSheet alloc] initWithTitle:@"L'adresse entrée n'appert pas être une adresse courriel valide !" delegate:self cancelButtonTitle:nil destructiveButtonTitle:@"OK" otherButtonTitles:nil, nil];
+            
+            actionSheet.tag = 4;
+            
+            [actionSheet showInView:self.view];
+        }
+        
+        
+        
+        
+    }
+}
+
+-(BOOL) NSStringIsValidEmail:(NSString *)checkString
+{
+    BOOL stricterFilter = NO;
+    NSString *stricterFilterString = @"^[A-Z0-9a-z\\._%+-]+@([A-Za-z0-9-]+\\.)+[A-Za-z]{2,4}$";
+    NSString *laxString = @"^.+@([A-Za-z0-9-]+\\.)+[A-Za-z]{2}[A-Za-z]*$";
+    NSString *emailRegex = stricterFilter ? stricterFilterString : laxString;
+    NSPredicate *emailTest = [NSPredicate predicateWithFormat:@"SELF MATCHES %@", emailRegex];
+    return [emailTest evaluateWithObject:checkString];
 }
 
 
@@ -995,15 +1063,16 @@ double varTotal;
             sqlite3_bind_int(insStmt, 5, commIsDraftModified);
             sqlite3_bind_int(insStmt, 6, commID);
             
-            sqlite3_exec(database, "COMMIT", NULL, NULL, &errmsg);
+            //sqlite3_exec(database, "COMMIT", NULL, NULL, &errmsg);
             
-            if(SQLITE_DONE != sqlite3_step(insStmt)){
-                NSLog(@"Error while updating. %s", sqlite3_errmsg(database));
-                insertResult = @"Error";
+            if (sqlite3_step(insStmt) != SQLITE_DONE) {
+                NSLog(@"Error during step. %s", sqlite3_errmsg(database));
+            
+            //if(SQLITE_DONE != sqlite3_step(insStmt)){
+                //NSLog(@"Error while updating. %s", sqlite3_errmsg(database));
+                //insertResult = @"Error";
             } else {
                 sqlite3_finalize(insStmt);
-                //long test = sqlite3_last_insert_rowid(database);
-                //NSString * insertionID = [NSString stringWithFormat:@"%li", test];
                 insertResult =  self.selectedOrder.commID;
             }
             

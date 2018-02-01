@@ -8,10 +8,11 @@
 
 #import <UIKit/UIKit.h>
 #import <sqlite3.h>
-#import "PRELocalDBTools.h"
+//#import "PRELocalDBTools.h"
 #import "Order.h"
 #import "OrderItem.h"
 #import "MDCAppDelegate.h"
+#import "MBProgressHUD.h"
 
 @interface BIDSettingsViewController : UIViewController <UIActionSheetDelegate>
 

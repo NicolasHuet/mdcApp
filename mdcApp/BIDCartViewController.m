@@ -226,6 +226,7 @@ double varTotal;
         
         //appDelegate.cartProducts;
         
+        
         NSString *query;
         
         query = [NSString stringWithFormat:@"SELECT * FROM Clients WHERE clientID = %@", self.selectedOrder.commClientID];
@@ -249,6 +250,7 @@ double varTotal;
                 NSString * clientCity;
                 NSString * clientProv;
                 NSString * clientCodePostal;
+                NSString * clientIDSAQ;
                 
                 /*
                  1-clientID INT PRIMARY KEY,
@@ -304,6 +306,9 @@ double varTotal;
                 columnData = (char *)sqlite3_column_text(statement, 10);
                 clientTel = [[NSString alloc] initWithUTF8String:columnData];
                 
+                columnData = (char *)sqlite3_column_text(statement, 17);
+                clientIDSAQ = [[NSString alloc] initWithUTF8String:columnData];
+                
                 columnIntValue = (int)sqlite3_column_int(statement, 16);
                 if(columnIntValue == 1){
                     clientType = @"Hotel";
@@ -332,6 +337,7 @@ double varTotal;
                 clientToAdd.city = clientCity;
                 clientToAdd.province = clientProv;
                 clientToAdd.postalcode = clientCodePostal;
+                clientToAdd.clientIDSAQ = clientIDSAQ;
                 
                 appDelegate.sessionActiveClient = clientToAdd;
                 
@@ -339,6 +345,20 @@ double varTotal;
             sqlite3_finalize(statement);
             
         }
+        
+        /*
+        NSPredicate *predicate = [NSPredicate predicateWithFormat:@"clientID == %@", self.selectedOrder.commClientID];
+        NSArray *tmpClientLookup = [NSMutableArray arrayWithArray:[appDelegate.glClientArray filteredArrayUsingPredicate:predicate]];
+        if(tmpClientLookup.count > 0){
+            Client *tmpClient = [tmpClientLookup objectAtIndex:0];
+            appDelegate.sessionActiveClient = tmpClient;
+        } else {
+            
+        }
+         */
+        
+        //NSString *query;
+        //sqlite3_stmt *statement;
         
         if([self.selectedOrder.commDataSource  isEqual: @"local"]) {
             query = [NSString stringWithFormat:@"SELECT * FROM LocalCommandeItems WHERE commItemCommID = %@",self.selectedOrder.commID];
@@ -671,6 +691,8 @@ double varTotal;
             cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:CellIdentifier];
         }
         
+        [cell setBackgroundColor:[UIColor lightGrayColor]];
+        
         if(currentClient == nil){
             UILabel *clientNameLabel = (UILabel *)[cell viewWithTag:110];
             clientNameLabel.text = @"Pas de client sélectionné";
@@ -678,6 +700,8 @@ double varTotal;
             clientContactLabel.text = @"N/A";
             UILabel *clientTelLabel = (UILabel *)[cell viewWithTag:112];
             clientTelLabel.text = @"N/A";
+            UILabel *clientNoSAQLabel = (UILabel *)[cell viewWithTag:114];
+            clientNoSAQLabel.text = @"N/A";
             
         } else {
             UILabel *clientNameLabel = (UILabel *)[cell viewWithTag:110];
@@ -686,6 +710,8 @@ double varTotal;
             clientContactLabel.text = currentClient.personneRessource;
             UILabel *clientTelLabel = (UILabel *)[cell viewWithTag:112];
             clientTelLabel.text = currentClient.telephone;
+            UILabel *clientNoSAQLabel = (UILabel *)[cell viewWithTag:114];
+            clientNoSAQLabel.text = currentClient.clientIDSAQ;
         }
         
         UIImageView *clientImageView = (UIImageView *)[cell viewWithTag:113];
@@ -713,6 +739,8 @@ double varTotal;
         if (cell == nil) {
             cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:CellIdentifier];
         }
+        
+        [cell setBackgroundColor:[UIColor lightGrayColor]];
         
         if((self.selectedOrder != nil) && (![self.selectedOrder.commStatutID isEqual: @"1"])) {
             UIButton *addProductButton = (UIButton *)[cell viewWithTag:600];
@@ -873,7 +901,7 @@ double varTotal;
     int rowSize;
     
     if(indexPath.section == 0){
-        rowSize = 104;
+        rowSize = 130;
     } else if(indexPath.section == 2){
         rowSize = 140;
     } else {
@@ -1542,7 +1570,7 @@ double varTotal;
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
     if (indexPath.section == 2) {
-        if([self.selectedOrder.commStatutID isEqual: @"1"]){
+        if((self.selectedOrder == nil) || ([self.selectedOrder.commStatutID isEqual: @"1"])){
             static NSString *CellIdentifier = @"itemCell";
             UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
             if ([cell.reuseIdentifier isEqualToString:CellIdentifier])

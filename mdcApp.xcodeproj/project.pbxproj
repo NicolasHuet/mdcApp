@@ -75,11 +75,12 @@
 		8E9E02131B2E680F00511202 /* subTotalLine.png in Resources */ = {isa = PBXBuildFile; fileRef = 8E9E02121B2E680F00511202 /* subTotalLine.png */; };
 		8E9E02151B2E691C00511202 /* saq.png in Resources */ = {isa = PBXBuildFile; fileRef = 8E9E02141B2E691C00511202 /* saq.png */; };
 		8E9E02171B2E695900511202 /* logoMDC.png in Resources */ = {isa = PBXBuildFile; fileRef = 8E9E02161B2E695900511202 /* logoMDC.png */; };
-		8E9E021A1B2E91AD00511202 /* MDCReservationCellTableViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 8E9E02191B2E91AD00511202 /* MDCReservationCellTableViewCell.m */; };
+		8E9E021C1B2EA19800511202 /* mailSend.png in Resources */ = {isa = PBXBuildFile; fileRef = 8E9E021B1B2EA19800511202 /* mailSend.png */; };
 		8EDB23CC1A9476380065C3DE /* Cart32.png in Resources */ = {isa = PBXBuildFile; fileRef = 8EDB23CB1A9476380065C3DE /* Cart32.png */; };
 		8EF099BA19C29EB30070E5CC /* BIDOrderDetailTableVC.m in Sources */ = {isa = PBXBuildFile; fileRef = 8EF099B919C29EB30070E5CC /* BIDOrderDetailTableVC.m */; };
 		8EF099BD19C6ABDD0070E5CC /* BIDSelectClientTableVC.m in Sources */ = {isa = PBXBuildFile; fileRef = 8EF099BC19C6ABDD0070E5CC /* BIDSelectClientTableVC.m */; };
 		8EF099C019C73CF10070E5CC /* BIDSelectProductTableVC.m in Sources */ = {isa = PBXBuildFile; fileRef = 8EF099BF19C73CF10070E5CC /* BIDSelectProductTableVC.m */; };
+		D7D429A61BCD985100790952 /* MBProgressHUD.m in Sources */ = {isa = PBXBuildFile; fileRef = D7D429A51BCD985100790952 /* MBProgressHUD.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -179,8 +180,7 @@
 		8E9E02121B2E680F00511202 /* subTotalLine.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = subTotalLine.png; sourceTree = "<group>"; };
 		8E9E02141B2E691C00511202 /* saq.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = saq.png; sourceTree = "<group>"; };
 		8E9E02161B2E695900511202 /* logoMDC.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = logoMDC.png; path = Images.xcassets/AppIcon.appiconset/logoMDC.png; sourceTree = "<group>"; };
-		8E9E02181B2E91AD00511202 /* MDCReservationCellTableViewCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MDCReservationCellTableViewCell.h; sourceTree = "<group>"; };
-		8E9E02191B2E91AD00511202 /* MDCReservationCellTableViewCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MDCReservationCellTableViewCell.m; sourceTree = "<group>"; };
+		8E9E021B1B2EA19800511202 /* mailSend.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = mailSend.png; sourceTree = "<group>"; };
 		8EDB23CB1A9476380065C3DE /* Cart32.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Cart32.png; sourceTree = "<group>"; };
 		8EF099B819C29EB30070E5CC /* BIDOrderDetailTableVC.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BIDOrderDetailTableVC.h; sourceTree = "<group>"; };
 		8EF099B919C29EB30070E5CC /* BIDOrderDetailTableVC.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BIDOrderDetailTableVC.m; sourceTree = "<group>"; };
@@ -188,6 +188,8 @@
 		8EF099BC19C6ABDD0070E5CC /* BIDSelectClientTableVC.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BIDSelectClientTableVC.m; sourceTree = "<group>"; };
 		8EF099BE19C73CF10070E5CC /* BIDSelectProductTableVC.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BIDSelectProductTableVC.h; sourceTree = "<group>"; };
 		8EF099BF19C73CF10070E5CC /* BIDSelectProductTableVC.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BIDSelectProductTableVC.m; sourceTree = "<group>"; };
+		D7D429A41BCD985100790952 /* MBProgressHUD.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MBProgressHUD.h; sourceTree = "<group>"; };
+		D7D429A51BCD985100790952 /* MBProgressHUD.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MBProgressHUD.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -267,6 +269,7 @@
 		8E8CDFD318C058F0007330E1 /* mdcApp */ = {
 			isa = PBXGroup;
 			children = (
+				D7D429A21BCD981400790952 /* 3rdParty */,
 				8E38679B1938381500626F0B /* localSQLdb */,
 				8E8CE01318C06292007330E1 /* UIClasses */,
 				8E8CE00C18C05FF4007330E1 /* DataTypes */,
@@ -379,8 +382,6 @@
 				8E2B178E1B0DD1D100E01AA3 /* BIDReservationsVC.m */,
 				8E6B545B1B12D447006F5B87 /* BIDReservationCartVC.h */,
 				8E6B545C1B12D447006F5B87 /* BIDReservationCartVC.m */,
-				8E9E02181B2E91AD00511202 /* MDCReservationCellTableViewCell.h */,
-				8E9E02191B2E91AD00511202 /* MDCReservationCellTableViewCell.m */,
 			);
 			name = UIClasses;
 			sourceTree = "<group>";
@@ -433,6 +434,7 @@
 				8E8CE03C18C0F110007330E1 /* checkout(128).png */,
 				8E2B17911B0E133E00E01AA3 /* Draft.png */,
 				8E9E02161B2E695900511202 /* logoMDC.png */,
+				8E9E021B1B2EA19800511202 /* mailSend.png */,
 				8E2B17901B0E133E00E01AA3 /* Review.png */,
 				8E9E02141B2E691C00511202 /* saq.png */,
 				8E5E08581A1016150066E3E7 /* shoppingAdd.png */,
@@ -442,6 +444,23 @@
 				8E79961C1A437406001A195E /* wineAdd3.png */,
 			);
 			name = CartView;
+			sourceTree = "<group>";
+		};
+		D7D429A21BCD981400790952 /* 3rdParty */ = {
+			isa = PBXGroup;
+			children = (
+				D7D429A31BCD983A00790952 /* ProgressHUD */,
+			);
+			name = 3rdParty;
+			sourceTree = "<group>";
+		};
+		D7D429A31BCD983A00790952 /* ProgressHUD */ = {
+			isa = PBXGroup;
+			children = (
+				D7D429A41BCD985100790952 /* MBProgressHUD.h */,
+				D7D429A51BCD985100790952 /* MBProgressHUD.m */,
+			);
+			name = ProgressHUD;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -489,7 +508,7 @@
 			isa = PBXProject;
 			attributes = {
 				CLASSPREFIX = MDC;
-				LastUpgradeCheck = 0610;
+				LastUpgradeCheck = 0700;
 				ORGANIZATIONNAME = MaitreDeChai;
 				TargetAttributes = {
 					8E8CDFC918C058F0007330E1 = {
@@ -563,6 +582,7 @@
 				8E442F5719BEAC9700126B87 /* hotel.png in Resources */,
 				8E8CE00918C05AE7007330E1 /* PurchaseOrder(32).png in Resources */,
 				8E9E02171B2E695900511202 /* logoMDC.png in Resources */,
+				8E9E021C1B2EA19800511202 /* mailSend.png in Resources */,
 				8E79961D1A437406001A195E /* wineAdd3.png in Resources */,
 				8E8CE03D18C0F110007330E1 /* checkout(128).png in Resources */,
 				8E2B17931B0E133E00E01AA3 /* Draft.png in Resources */,
@@ -593,6 +613,7 @@
 				8E38679E1938383900626F0B /* PRELocalDBTools.m in Sources */,
 				8EF099C019C73CF10070E5CC /* BIDSelectProductTableVC.m in Sources */,
 				8E8CDFDA18C058F0007330E1 /* main.m in Sources */,
+				D7D429A61BCD985100790952 /* MBProgressHUD.m in Sources */,
 				8E78ECFE19B7743A00741588 /* Order.m in Sources */,
 				8E6B545D1B12D447006F5B87 /* BIDReservationCartVC.m in Sources */,
 				8E25FD341A158B0400B08D7B /* OrderItem.m in Sources */,
@@ -605,7 +626,6 @@
 				8E8CE01218C0600B007330E1 /* Product.m in Sources */,
 				8E8CDFDE18C058F0007330E1 /* MDCAppDelegate.m in Sources */,
 				8E8CE01118C0600B007330E1 /* Client.m in Sources */,
-				8E9E021A1B2E91AD00511202 /* MDCReservationCellTableViewCell.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -673,6 +693,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
+				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_OPTIMIZATION_LEVEL = 0;
@@ -737,6 +758,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "mdcApp/mdcApp-Prefix.pch";
 				INFOPLIST_FILE = "mdcApp/mdcApp-Info.plist";
+				PRODUCT_BUNDLE_IDENTIFIER = "ca.nicolashuet.MDC$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
 				WRAPPER_EXTENSION = app;
@@ -753,6 +775,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "mdcApp/mdcApp-Prefix.pch";
 				INFOPLIST_FILE = "mdcApp/mdcApp-Info.plist";
+				PRODUCT_BUNDLE_IDENTIFIER = "ca.nicolashuet.MDC$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
 				WRAPPER_EXTENSION = app;
@@ -775,6 +798,7 @@
 					"$(inherited)",
 				);
 				INFOPLIST_FILE = "mdcAppTests/mdcAppTests-Info.plist";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.maitredechai.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TEST_HOST = "$(BUNDLE_LOADER)";
 				WRAPPER_EXTENSION = xctest;
@@ -793,6 +817,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "mdcApp/mdcApp-Prefix.pch";
 				INFOPLIST_FILE = "mdcAppTests/mdcAppTests-Info.plist";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.maitredechai.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TEST_HOST = "$(BUNDLE_LOADER)";
 				WRAPPER_EXTENSION = xctest;

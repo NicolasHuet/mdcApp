@@ -8,7 +8,7 @@
 
 #import <UIKit/UIKit.h>
 #import <sqlite3.h>
-#import "PRELocalDBTools.h"
+//#import "PRELocalDBTools.h"
 #import "Client.h"
 
 @interface BIDClientTableViewController : UITableViewController <UISearchBarDelegate, UISearchDisplayDelegate>

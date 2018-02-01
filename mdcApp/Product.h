@@ -8,7 +8,7 @@
 
 #import <Foundation/Foundation.h>
 
-@interface Product : NSObject
+@interface Product : NSObject <NSCoding>
 
 @property (nonatomic, strong) NSString *vinID;
 @property (nonatomic, strong) NSString *vinNumero;

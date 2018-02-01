@@ -47,5 +47,14 @@
 @property (nonatomic) Boolean reservationsViewNeedsRefreshing;
 @property (nonatomic) Boolean cartViewNeedsRefreshing;
 
+@property (nonatomic) Boolean canSubmitReservationDoc;
+
+@property (nonatomic,strong) NSMutableArray *glClientArray;
+@property (nonatomic,strong) NSMutableArray *glOrderArray;
+@property (nonatomic,strong) NSMutableArray *glOrderItemsArray;
+@property (nonatomic,strong) NSMutableArray *glReservationArray;
+@property (nonatomic,strong) NSMutableArray *glReservationItemsArray;
+@property (nonatomic,strong) NSMutableArray *glProductArray;
+
 
 @end

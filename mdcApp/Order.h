@@ -8,7 +8,7 @@
 
 #import <Foundation/Foundation.h>
 
-@interface Order : NSObject
+@interface Order : NSObject <NSCoding>
 
 /*
  1-commID INT PRIMARY KEY,
@@ -26,6 +26,20 @@
  13-commCommentaire TEXT,
  14-commLastUpdated TEXT
  */
+
+//{"commID":92066,
+//"commStatutID":10,
+//"commRepID":10,
+//"commIDSAQ":"",
+//"commClientID":1922,
+//"commCommTypeLivrID":4,
+//"commDateFact":"",
+//"commDelaiPickup":"0",
+//"commDatePickup":"",
+//"commClientJourPickup":"Mercredi",
+//"commPartSuccID":1,
+//"commTypeClientID":1,
+//"commCommentaire":""}
 
 @property (nonatomic, strong) NSString *commID;
 @property (nonatomic, strong) NSString *commStatutID;

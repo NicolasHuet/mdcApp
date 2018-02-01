@@ -7,6 +7,7 @@
 //
 
 #import "MDCClientDetailsTableViewController.h"
+#import "MDCAppDelegate.h"
 
 @implementation MDCClientDetailsTableViewController
 
@@ -14,6 +15,7 @@
 
 sqlite3 *database;
 Order *currentOrder;
+MDCAppDelegate *appDelegate;
 
 - (NSString *)dataFilePath
 {
@@ -36,6 +38,7 @@ Order *currentOrder;
     [super viewDidLoad];
     
     self.orderArray = [[NSMutableArray alloc] init];
+    appDelegate = [[UIApplication sharedApplication] delegate];
     
     int numberOfRows = 0;
     
@@ -248,6 +251,8 @@ Order *currentOrder;
         
         order = [orderArray objectAtIndex:indexPath.row];
         
+        
+        
         if (sqlite3_open([[self dataFilePath] UTF8String], &database)
             != SQLITE_OK) {
             sqlite3_close(database);
@@ -297,6 +302,19 @@ Order *currentOrder;
         }
         sqlite3_finalize(statement);
         
+        /*
+        NSPredicate *predicate = [NSPredicate predicateWithFormat:@"clientID == %@", order.commClientID];
+        NSArray *tmpClientLookup = [NSMutableArray arrayWithArray:[appDelegate.glClientArray filteredArrayUsingPredicate:predicate]];
+        if(tmpClientLookup.count > 0){
+            Client *tmpClient = [tmpClientLookup objectAtIndex:0];
+            UILabel *clientNameLabel = (UILabel *)[cell viewWithTag:131];
+            clientNameLabel.text = tmpClient.name;
+        } else {
+            
+        }
+        */
+        
+        
         UILabel *commIDLabel = (UILabel *)[cell viewWithTag:135];
         commIDLabel.text = order.commID;
         
@@ -332,6 +350,8 @@ Order *currentOrder;
             commStatut.text = @"";
         }
         
+        //NSString *query;
+        //sqlite3_stmt *statement;
         
         if (sqlite3_prepare_v2(database, [query UTF8String],
                                -1, &statement, nil) == SQLITE_OK)

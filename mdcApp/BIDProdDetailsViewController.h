@@ -8,6 +8,7 @@
 
 #import <UIKit/UIKit.h>
 #import "Product.h"
+#import <sqlite3.h>
 
 @interface BIDProdDetailsViewController : UITableViewController <UIActionSheetDelegate>
 
@@ -40,11 +41,20 @@
 @property (strong, nonatomic) IBOutlet UILabel *infosLastSync;
 
 @property (strong, nonatomic) IBOutlet UILabel *prodCurrStock;
+@property (strong, nonatomic) IBOutlet UILabel *prodMargeReserv;
 @property (strong, nonatomic) IBOutlet UITextField *addQty;
 @property (weak, nonatomic) IBOutlet UILabel *addQtyLbl;
 @property (strong, nonatomic) IBOutlet UIButton *addCartButton;
 @property (strong, nonatomic) IBOutlet UIButton *subsEmpaqButton;
 @property (strong, nonatomic) IBOutlet UIButton *addEmpaqButton;
+
+@property (strong, nonatomic) IBOutlet UILabel *inventaireLbl;
+@property (strong, nonatomic) IBOutlet UILabel *timbrageLbl;
+@property (strong, nonatomic) IBOutlet UILabel *HonoraireLbl;
+@property (strong, nonatomic) IBOutlet UIImageView *qteAchatImg;
+@property (strong, nonatomic) IBOutlet UIImageView *EmpaqImg;
+@property (strong, nonatomic) IBOutlet UIImageView *dispoImg;
+@property (strong, nonatomic) IBOutlet UIImageView *uvcImg;
 
 - (IBAction)addEmpaq:(id)sender;
 - (IBAction)subsEmpaq:(id)sender;

@@ -50,5 +50,7 @@
 
 - (IBAction)cancelTransaction:(id)sender;
 
+- (IBAction)doSubmitReservDocByMail:(id)sender;
+
 
 @end

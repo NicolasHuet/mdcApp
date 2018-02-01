@@ -26,6 +26,8 @@ NSData *jsonDataForModified;
 NSData *jsonDataReservations;
 NSData *jsonDataForModifiedReservations;
 
+MBProgressHUD *hud;
+
 - (NSString *)dataFilePath
 {
     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
@@ -60,16 +62,26 @@ NSData *jsonDataForModifiedReservations;
     UIEdgeInsets inset = UIEdgeInsetsMake(5, 0, 0, 0);
     self.tableView.contentInset = inset;
     
-    appDelegate.reservationsViewNeedsRefreshing = NO;
+    orderSearchbar.delegate = (id)self;
     
-    self.filteredOrderArray = [NSMutableArray arrayWithCapacity:[orderArray count]];
+    appDelegate.reservationsViewNeedsRefreshing = NO;
     
     // Reload the table
     [[self tableView] reloadData];
 }
 
+- (void)viewWillDisappear:(BOOL)animated {
+    //sqlite3_close(database);
+}
+
 - (void) viewWillAppear:(BOOL)animated {
     [super viewWillAppear:YES];
+    
+    if (sqlite3_open([[self dataFilePath] UTF8String], &database)
+        != SQLITE_OK) {
+        sqlite3_close(database);
+        NSAssert(0, @"Failed to open database");
+    }
     
     if(appDelegate.reservationsViewNeedsRefreshing) {
         [self reloadViewFromDatabase];
@@ -81,13 +93,6 @@ NSData *jsonDataForModifiedReservations;
 
 - (void) reloadViewFromDatabase {
     self.orderArray = [[NSMutableArray alloc] init];
-    int numberOfRows = 0;
-    
-    if (sqlite3_open([[self dataFilePath] UTF8String], &database)
-        != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Failed to open database");
-    }
     
     NSString *localquery = [NSString stringWithFormat:@"SELECT * FROM LocalReservations ORDER BY commID DESC"];
     
@@ -176,8 +181,6 @@ NSData *jsonDataForModifiedReservations;
             
             [self.orderArray addObject:orderToAdd];
             
-            numberOfRows = numberOfRows + 1;
-            
         }
         sqlite3_finalize(localstatement);
     }
@@ -203,21 +206,10 @@ NSData *jsonDataForModifiedReservations;
             NSString * commIsDraftModified;
             
             /*
-             1-commID INT PRIMARY KEY,
-             2-commStatutID INT,
-             3-commRepID INT,
-             4-commIDSAQ TEXT,
-             5-commClientID INT,
-             6-commTypeClntID INT,
-             7-commCommTypeLivrID INT,
-             8-commDateFact TEXT,
-             9-commDelaiPickup INT,
-             10-commDatePickup TEXT,
-             11-commClientJourLivr TEXT,
-             12-commPartSuccID INT,
-             13-commCommentaire TEXT,
-             14-commLastUpdated TEXT,
-             15-commIsDraftModified INT
+             CREATE TABLE IF NOT EXISTS Reservations "
+             "(commID INT PRIMARY KEY, commStatutID INT, commRepID INT, "
+             "commClientID INT, commDateSaisie TEXT, "
+             "commCommentaire TEXT, commLastUpdated TEXT, commIsDraftModified INT
              */
             
             columnIntValue = (int)sqlite3_column_int(statement, 0);
@@ -238,7 +230,7 @@ NSData *jsonDataForModifiedReservations;
             } else {
                 commCommentaire = [[NSString alloc] initWithUTF8String:columnData];
             }
-            columnIntValue = (int)sqlite3_column_int(statement, 14);
+            columnIntValue = (int)sqlite3_column_int(statement, 7);
             commIsDraftModified = [NSString stringWithFormat:@"%i",columnIntValue];
             
             NSString *clientQuery = [NSString stringWithFormat:@"SELECT * FROM Clients WHERE clientID = %@",commClientID];
@@ -291,8 +283,6 @@ NSData *jsonDataForModifiedReservations;
             
             [self.orderArray addObject:orderToAdd];
             
-            numberOfRows = numberOfRows + 1;
-            
         }
         sqlite3_finalize(statement);
     }
@@ -342,13 +332,6 @@ NSData *jsonDataForModifiedReservations;
     } else {
         order = [orderArray objectAtIndex:indexPath.row];
     }
-    
-    if (sqlite3_open([[self dataFilePath] UTF8String], &database)
-        != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Failed to open database");
-    }
-    
     
     UILabel *clientNameLabel = (UILabel *)[cell viewWithTag:101];
     clientNameLabel.text = order.commClientName;
@@ -473,17 +456,6 @@ NSData *jsonDataForModifiedReservations;
 }
 
 
-/*
- #pragma mark - Navigation
- 
- // In a storyboard-based application, you will often want to do a little preparation before navigation
- - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender
- {
- // Get the new view controller using [segue destinationViewController].
- // Pass the selected object to the new view controller.
- }
- */
-
 - (IBAction)actionToNewOrder:(id)sender {
     
     MDCAppDelegate *appDelegate = [[UIApplication sharedApplication] delegate];
@@ -499,7 +471,6 @@ NSData *jsonDataForModifiedReservations;
     
     [self resConvertLocalOrdersToJson];
     [self resConvertModifiedSynchedOrdersToJson];
-    
     [self resConvertLocalReservationsToJson];
     [self resConvertModifiedSynchedReservationsToJson];
     
@@ -510,12 +481,6 @@ NSData *jsonDataForModifiedReservations;
 
 -(void) resConvertLocalOrdersToJson {
     NSMutableArray *jsonMuteArray = [[NSMutableArray alloc] init];
-    
-    if (sqlite3_open([[self dataFilePath] UTF8String], &database)
-        != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Failed to open database");
-    }
     
     NSString *localquery = [NSString stringWithFormat:@"SELECT * FROM LocalCommandes"];
     
@@ -665,12 +630,6 @@ NSData *jsonDataForModifiedReservations;
 -(void) resConvertModifiedSynchedOrdersToJson {
     NSMutableArray *jsonMuteArray = [[NSMutableArray alloc] init];
     
-    if (sqlite3_open([[self dataFilePath] UTF8String], &database)
-        != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Failed to open database");
-    }
-    
     NSString *localquery = [NSString stringWithFormat:@"SELECT * FROM Commandes WHERE commIsDraftModified = 1"];
     
     sqlite3_stmt *localstatement;
@@ -816,20 +775,10 @@ NSData *jsonDataForModifiedReservations;
     jsonDataForModified = [NSJSONSerialization dataWithJSONObject:jsonMuteArray
                                                           options:0
                                                             error:nil];
-    
-    //NSString *jsonDump = [[NSString alloc] initWithData:jsonDataForModified encoding:NSUTF8StringEncoding];
-    
-    
 }
 
 -(void) resConvertLocalReservationsToJson {
     NSMutableArray *jsonMuteArray = [[NSMutableArray alloc] init];
-    
-    if (sqlite3_open([[self dataFilePath] UTF8String], &database)
-        != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Failed to open database");
-    }
     
     NSString *localquery = [NSString stringWithFormat:@"SELECT * FROM LocalReservations"];
     
@@ -949,12 +898,6 @@ NSData *jsonDataForModifiedReservations;
 
 -(void) resConvertModifiedSynchedReservationsToJson {
     NSMutableArray *jsonMuteArray = [[NSMutableArray alloc] init];
-    
-    if (sqlite3_open([[self dataFilePath] UTF8String], &database)
-        != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Failed to open database");
-    }
     
     NSString *localquery = [NSString stringWithFormat:@"SELECT * FROM Reservations WHERE commIsDraftModified = 1"];
     
@@ -1297,179 +1240,11 @@ NSData *jsonDataForModifiedReservations;
     
 }
 
--(void) resResetLocalOrderDBs {
-    
-    if (sqlite3_open([[self dataFilePath] UTF8String], &database)
-        != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Failed to open database");
-    }
-    
-    char *errorMsg;
-    
-    NSString *dropClientsSQL = @"DROP TABLE IF EXISTS LocalCommandeItems;";
-    
-    if (sqlite3_exec (database, [dropClientsSQL UTF8String],
-                      NULL, NULL, &errorMsg) != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Error dropping table: %s", errorMsg);
-    }
-    
-    dropClientsSQL = @"DROP TABLE IF EXISTS LocalCommandes;";
-    
-    if (sqlite3_exec (database, [dropClientsSQL UTF8String],
-                      NULL, NULL, &errorMsg) != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Error dropping table: %s", errorMsg);
-    }
-    
-    NSString *createSQL = @"CREATE TABLE IF NOT EXISTS LocalCommandes "
-    "(commID INTEGER PRIMARY KEY AUTOINCREMENT, commStatutID INT, commRepID INT, commIDSAQ TEXT, "
-    "commClientID INT, commTypeClntID INT, commCommTypeLivrID INT, commDateFact TEXT, "
-    "commDelaiPickup INT, commDatePickup TEXT, commClientJourLivr TEXT, commPartSuccID INT, "
-    "commCommentaire TEXT, commLastUpdated TEXT);";
-    
-    if (sqlite3_exec (database, [createSQL UTF8String],
-                      NULL, NULL, &errorMsg) != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Error creating table: %s", errorMsg);
-    }
-    
-    createSQL = @"CREATE TABLE IF NOT EXISTS LocalCommandeItems "
-    "(commItemID INTEGER PRIMARY KEY AUTOINCREMENT, commItemCommID INT, commItemVinID INT, commItemVinQte INT);";
-    
-    if (sqlite3_exec (database, [createSQL UTF8String],
-                      NULL, NULL, &errorMsg) != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Error creating table: %s", errorMsg);
-    }
-    
-    NSString *dropCommandesSQL = @"DROP TABLE IF EXISTS Commandes;";
-    
-    if (sqlite3_exec (database, [dropCommandesSQL UTF8String],
-                      NULL, NULL, &errorMsg) != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Error dropping table: %s", errorMsg);
-    }
-    
-    createSQL = @"CREATE TABLE IF NOT EXISTS Commandes "
-    "(commID INT PRIMARY KEY, commStatutID INT, commRepID INT, commIDSAQ TEXT, "
-    "commClientID INT, commTypeClntID INT, commCommTypeLivrID INT, commDateFact TEXT, "
-    "commDelaiPickup INT, commDatePickup TEXT, commClientJourLivr TEXT, commPartSuccID INT, "
-    "commCommentaire TEXT, commLastUpdated TEXT, commIsDraftModified INT);";
-    
-    if (sqlite3_exec (database, [createSQL UTF8String],
-                      NULL, NULL, &errorMsg) != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Error creating table: %s", errorMsg);
-    }
-    
-    NSString *dropCommandeItemsSQL = @"DROP TABLE IF EXISTS CommandeItems;";
-    
-    if (sqlite3_exec (database, [dropCommandeItemsSQL UTF8String],
-                      NULL, NULL, &errorMsg) != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Error dropping table: %s", errorMsg);
-    }
-    
-    createSQL = @"CREATE TABLE IF NOT EXISTS CommandeItems "
-    "(commItemID INT PRIMARY KEY, commItemCommID INT, commItemVinID INT, commItemVinQte INT);";
-    
-    if (sqlite3_exec (database, [createSQL UTF8String],
-                      NULL, NULL, &errorMsg) != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Error creating table: %s", errorMsg);
-    }
-    
-    NSString *dropReservationsSQL = @"DROP TABLE IF EXISTS Reservations;";
-    
-    if (sqlite3_exec (database, [dropReservationsSQL UTF8String],
-                      NULL, NULL, &errorMsg) != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Error dropping table: %s", errorMsg);
-    }
-    
-    createSQL = @"CREATE TABLE IF NOT EXISTS Reservations "
-    "(commID INT PRIMARY KEY, commStatutID INT, commRepID INT, "
-    "commClientID INT, commDateSaisie TEXT, "
-    "commCommentaire TEXT, commLastUpdated TEXT, commIsDraftModified INT);";
-    
-    if (sqlite3_exec (database, [createSQL UTF8String],
-                      NULL, NULL, &errorMsg) != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Error creating table: %s", errorMsg);
-    }
-    
-    NSString *dropReservationItemsSQL = @"DROP TABLE IF EXISTS ReservationItems;";
-    
-    if (sqlite3_exec (database, [dropReservationItemsSQL UTF8String],
-                      NULL, NULL, &errorMsg) != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Error dropping table: %s", errorMsg);
-    }
-    
-    createSQL = @"CREATE TABLE IF NOT EXISTS ReservationItems "
-    "(commItemID INT PRIMARY KEY, commItemCommID INT, commItemVinID INT, commItemVinQte INT);";
-    
-    if (sqlite3_exec (database, [createSQL UTF8String],
-                      NULL, NULL, &errorMsg) != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Error creating table: %s", errorMsg);
-    }
-    
-    dropReservationsSQL = @"DROP TABLE IF EXISTS LocalReservations;";
-    
-    if (sqlite3_exec (database, [dropReservationsSQL UTF8String],
-                      NULL, NULL, &errorMsg) != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Error dropping table: %s", errorMsg);
-    }
-    
-    createSQL = @"CREATE TABLE IF NOT EXISTS LocalReservations "
-    "(commID INTEGER PRIMARY KEY AUTOINCREMENT, commStatutID INT, commRepID INT, "
-    "commClientID INT, commDateSaisie TEXT, "
-    "commCommentaire TEXT, commLastUpdated TEXT);";
-    
-    if (sqlite3_exec (database, [createSQL UTF8String],
-                      NULL, NULL, &errorMsg) != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Error creating table: %s", errorMsg);
-    }
-    
-    dropReservationItemsSQL = @"DROP TABLE IF EXISTS LocalReservationItems;";
-    
-    if (sqlite3_exec (database, [dropReservationItemsSQL UTF8String],
-                      NULL, NULL, &errorMsg) != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Error dropping table: %s", errorMsg);
-    }
-    
-    createSQL = @"CREATE TABLE IF NOT EXISTS LocalReservationItems "
-    "(commItemID INTEGER PRIMARY KEY AUTOINCREMENT, commItemCommID INT, commItemVinID INT, commItemVinQte INT);";
-    
-    if (sqlite3_exec (database, [createSQL UTF8String],
-                      NULL, NULL, &errorMsg) != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Error creating table: %s", errorMsg);
-    }
-    
-    
-    sqlite3_close(database);
-    
-}
-
 - (void) resUpdateCommandesTable {
     
-    //[spinner startAnimating];
     NSString *repID = appDelegate.currLoggedUser;
     
     char *errorMsg = nil;
-    
-    if (sqlite3_open([[self dataFilePath] UTF8String], &database)
-        != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Failed to open database");
-    }
     
     NSURLSessionConfiguration *defaultConfigObject = [NSURLSessionConfiguration defaultSessionConfiguration];
     NSURLSession *defaultSession = [NSURLSession sessionWithConfiguration: defaultConfigObject delegate: nil delegateQueue: [NSOperationQueue mainQueue]];
@@ -1590,9 +1365,6 @@ NSData *jsonDataForModifiedReservations;
                                                                
                                                                if ([[NSThread currentThread] isMainThread]){
                                                                    NSLog(@"In main thread--completion handler");
-                                                                   //[spinner stopAnimating];
-                                                                   
-                                                                   //[self.tableView reloadData];
                                                                    
                                                                }
                                                                else{
@@ -1607,16 +1379,6 @@ NSData *jsonDataForModifiedReservations;
 }
 
 - (void) resUpdateCommandeItemsTable {
-    
-    //[spinner startAnimating];
-    
-    char *errorMsg = nil;
-
-    if (sqlite3_open([[self dataFilePath] UTF8String], &database)
-        != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Failed to open database");
-    }
     
     NSURLSessionConfiguration *defaultConfigObject = [NSURLSessionConfiguration defaultSessionConfiguration];
     NSURLSession *defaultSession = [NSURLSession sessionWithConfiguration: defaultConfigObject delegate: nil delegateQueue: [NSOperationQueue mainQueue]];
@@ -1673,6 +1435,8 @@ NSData *jsonDataForModifiedReservations;
                                                                 4-commItemVinQte INT
                                                                 */
                                                                
+                                                               char *errorMsg = nil;
+                                                               
                                                                if (sqlite3_step(stmt) != SQLITE_DONE)
                                                                    NSAssert(0, @"Error updating table: %s", errorMsg);
                                                                sqlite3_finalize(stmt);
@@ -1683,7 +1447,9 @@ NSData *jsonDataForModifiedReservations;
                                                                
                                                                if ([[NSThread currentThread] isMainThread]){
                                                                    NSLog(@"In main thread--completion handler");
-                                                                   //[[self tableView] reloadData];
+                                                                   
+                                                                   [hud hide:YES];
+                                                                   [self refreshTableViewContent];
                                                                }
                                                                else{
                                                                    NSLog(@"Not in main thread--completion handler");
@@ -1698,13 +1464,6 @@ NSData *jsonDataForModifiedReservations;
 - (void) resUpdateReservationsTable {
     
     NSString *repID = appDelegate.currLoggedUser;
-    char *errorMsg = nil;
-    
-    if (sqlite3_open([[self dataFilePath] UTF8String], &database)
-        != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Failed to open database");
-    }
     
     NSURLSessionConfiguration *defaultConfigObject = [NSURLSessionConfiguration defaultSessionConfiguration];
     NSURLSession *defaultSession = [NSURLSession sessionWithConfiguration: defaultConfigObject delegate: nil delegateQueue: [NSOperationQueue mainQueue]];
@@ -1744,17 +1503,17 @@ NSData *jsonDataForModifiedReservations;
                                                                int commID;
                                                                commID = [[[rows objectAtIndex:i] objectForKey:@"commID"]intValue];
                                                                
-                                                               //int tmpCommID = commID;
+                                                               int tmpCommID = commID;
                                                                
-                                                               //NSString * tmpStrCommID = [NSString stringWithFormat:@"%i",tmpCommID];
+                                                               NSString * tmpStrCommID = [NSString stringWithFormat:@"%i",tmpCommID];
                                                                
-                                                               int commStatutID;
+                                                               NSInteger commStatutID;
                                                                commStatutID = [[[rows objectAtIndex:i] objectForKey:@"commStatutID"]intValue];
                                                                
-                                                               int commRepID;
+                                                               NSInteger commRepID;
                                                                commRepID = [[[rows objectAtIndex:i] objectForKey:@"commRepID"]intValue];
                                                                
-                                                               int commClientID;
+                                                               NSInteger commClientID;
                                                                commClientID = [[[rows objectAtIndex:i] objectForKey:@"commClientID"]intValue];
                                                                
                                                                NSString * commCommentaire;
@@ -1791,11 +1550,13 @@ NSData *jsonDataForModifiedReservations;
                                                                 14-commLastUpdated TEXT
                                                                 */
                                                                
+                                                               char *errorMsg = nil;
+                                                               
                                                                if (sqlite3_step(stmt) != SQLITE_DONE)
                                                                    NSAssert(0, @"Error updating table: %s", errorMsg);
                                                                sqlite3_finalize(stmt);
                                                                
-                                                               //[self resUpdateReservationItemsTable:tmpStrCommID];
+                                                               //[self ordUpdateReservationItemsTable:tmpStrCommID];
                                                                
                                                            }
                                                            
@@ -1803,7 +1564,6 @@ NSData *jsonDataForModifiedReservations;
                                                                
                                                                if ([[NSThread currentThread] isMainThread]){
                                                                    NSLog(@"In main thread--completion handler");
-                                                                   //[spinner stopAnimating];
                                                                }
                                                                else{
                                                                    NSLog(@"Not in main thread--completion handler");
@@ -1815,14 +1575,6 @@ NSData *jsonDataForModifiedReservations;
 }
 
 - (void) resUpdateReservationItemsTable {
-    
-    char *errorMsg = nil;
-    
-    if (sqlite3_open([[self dataFilePath] UTF8String], &database)
-        != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Failed to open database");
-    }
     
     NSURLSessionConfiguration *defaultConfigObject = [NSURLSessionConfiguration defaultSessionConfiguration];
     NSURLSession *defaultSession = [NSURLSession sessionWithConfiguration: defaultConfigObject delegate: nil delegateQueue: [NSOperationQueue mainQueue]];
@@ -1880,6 +1632,8 @@ NSData *jsonDataForModifiedReservations;
                                                                 4-commItemVinQte INT
                                                                 */
                                                                
+                                                               char *errorMsg = nil;
+                                                               
                                                                if (sqlite3_step(stmt) != SQLITE_DONE)
                                                                    NSAssert(0, @"Error updating table: %s", errorMsg);
                                                                sqlite3_finalize(stmt);
@@ -1905,13 +1659,6 @@ NSData *jsonDataForModifiedReservations;
     self.orderArray = [[NSMutableArray alloc] init];
     
     int numberOfRows = 0;
-    
-    
-    if (sqlite3_open([[self dataFilePath] UTF8String], &database)
-        != SQLITE_OK) {
-        sqlite3_close(database);
-        NSAssert(0, @"Failed to open database");
-    }
     
     NSString *localquery = [NSString stringWithFormat:@"SELECT * FROM LocalReservations ORDER BY commID DESC"];
     
@@ -2121,18 +1868,162 @@ NSData *jsonDataForModifiedReservations;
         sqlite3_finalize(statement);
     }
     
-    appDelegate = [[UIApplication sharedApplication] delegate];
-    
-    self.tableView.rowHeight = 70;
-    self.clearsSelectionOnViewWillAppear = NO;
-    
-    UIEdgeInsets inset = UIEdgeInsetsMake(5, 0, 0, 0);
-    self.tableView.contentInset = inset;
-    
     self.filteredOrderArray = [NSMutableArray arrayWithCapacity:[orderArray count]];
     
     // Reload the table
     [[self tableView] reloadData];
+}
+
+-(void) resResetLocalOrderDBs {
+    
+    char *errorMsg;
+    
+    NSString *dropClientsSQL = @"DROP TABLE IF EXISTS LocalCommandeItems;";
+    
+    if (sqlite3_exec (database, [dropClientsSQL UTF8String],
+                      NULL, NULL, &errorMsg) != SQLITE_OK) {
+        sqlite3_close(database);
+        NSAssert(0, @"Error dropping table: %s", errorMsg);
+    }
+    
+    dropClientsSQL = @"DROP TABLE IF EXISTS LocalCommandes;";
+    
+    if (sqlite3_exec (database, [dropClientsSQL UTF8String],
+                      NULL, NULL, &errorMsg) != SQLITE_OK) {
+        sqlite3_close(database);
+        NSAssert(0, @"Error dropping table: %s", errorMsg);
+    }
+    
+    NSString *createSQL = @"CREATE TABLE IF NOT EXISTS LocalCommandes "
+    "(commID INTEGER PRIMARY KEY AUTOINCREMENT, commStatutID INT, commRepID INT, commIDSAQ TEXT, "
+    "commClientID INT, commTypeClntID INT, commCommTypeLivrID INT, commDateFact TEXT, "
+    "commDelaiPickup INT, commDatePickup TEXT, commClientJourLivr TEXT, commPartSuccID INT, "
+    "commCommentaire TEXT, commLastUpdated TEXT);";
+    
+    if (sqlite3_exec (database, [createSQL UTF8String],
+                      NULL, NULL, &errorMsg) != SQLITE_OK) {
+        sqlite3_close(database);
+        NSAssert(0, @"Error creating table: %s", errorMsg);
+    }
+    
+    createSQL = @"CREATE TABLE IF NOT EXISTS LocalCommandeItems "
+    "(commItemID INTEGER PRIMARY KEY AUTOINCREMENT, commItemCommID INT, commItemVinID INT, commItemVinQte INT);";
+    
+    if (sqlite3_exec (database, [createSQL UTF8String],
+                      NULL, NULL, &errorMsg) != SQLITE_OK) {
+        sqlite3_close(database);
+        NSAssert(0, @"Error creating table: %s", errorMsg);
+    }
+    
+    NSString *dropCommandesSQL = @"DROP TABLE IF EXISTS Commandes;";
+    
+    if (sqlite3_exec (database, [dropCommandesSQL UTF8String],
+                      NULL, NULL, &errorMsg) != SQLITE_OK) {
+        sqlite3_close(database);
+        NSAssert(0, @"Error dropping table: %s", errorMsg);
+    }
+    
+    createSQL = @"CREATE TABLE IF NOT EXISTS Commandes "
+    "(commID INT PRIMARY KEY, commStatutID INT, commRepID INT, commIDSAQ TEXT, "
+    "commClientID INT, commTypeClntID INT, commCommTypeLivrID INT, commDateFact TEXT, "
+    "commDelaiPickup INT, commDatePickup TEXT, commClientJourLivr TEXT, commPartSuccID INT, "
+    "commCommentaire TEXT, commLastUpdated TEXT, commIsDraftModified INT);";
+    
+    if (sqlite3_exec (database, [createSQL UTF8String],
+                      NULL, NULL, &errorMsg) != SQLITE_OK) {
+        sqlite3_close(database);
+        NSAssert(0, @"Error creating table: %s", errorMsg);
+    }
+    
+    NSString *dropCommandeItemsSQL = @"DROP TABLE IF EXISTS CommandeItems;";
+    
+    if (sqlite3_exec (database, [dropCommandeItemsSQL UTF8String],
+                      NULL, NULL, &errorMsg) != SQLITE_OK) {
+        sqlite3_close(database);
+        NSAssert(0, @"Error dropping table: %s", errorMsg);
+    }
+    
+    createSQL = @"CREATE TABLE IF NOT EXISTS CommandeItems "
+    "(commItemID INT PRIMARY KEY, commItemCommID INT, commItemVinID INT, commItemVinQte INT);";
+    
+    if (sqlite3_exec (database, [createSQL UTF8String],
+                      NULL, NULL, &errorMsg) != SQLITE_OK) {
+        sqlite3_close(database);
+        NSAssert(0, @"Error creating table: %s", errorMsg);
+    }
+    
+    NSString *dropReservationsSQL = @"DROP TABLE IF EXISTS Reservations;";
+    
+    if (sqlite3_exec (database, [dropReservationsSQL UTF8String],
+                      NULL, NULL, &errorMsg) != SQLITE_OK) {
+        sqlite3_close(database);
+        NSAssert(0, @"Error dropping table: %s", errorMsg);
+    }
+    
+    createSQL = @"CREATE TABLE IF NOT EXISTS Reservations "
+    "(commID INT PRIMARY KEY, commStatutID INT, commRepID INT, "
+    "commClientID INT, commDateSaisie TEXT, "
+    "commCommentaire TEXT, commLastUpdated TEXT, commIsDraftModified INT);";
+    
+    if (sqlite3_exec (database, [createSQL UTF8String],
+                      NULL, NULL, &errorMsg) != SQLITE_OK) {
+        sqlite3_close(database);
+        NSAssert(0, @"Error creating table: %s", errorMsg);
+    }
+    
+    NSString *dropReservationItemsSQL = @"DROP TABLE IF EXISTS ReservationItems;";
+    
+    if (sqlite3_exec (database, [dropReservationItemsSQL UTF8String],
+                      NULL, NULL, &errorMsg) != SQLITE_OK) {
+        sqlite3_close(database);
+        NSAssert(0, @"Error dropping table: %s", errorMsg);
+    }
+    
+    createSQL = @"CREATE TABLE IF NOT EXISTS ReservationItems "
+    "(commItemID INT PRIMARY KEY, commItemCommID INT, commItemVinID INT, commItemVinQte INT);";
+    
+    if (sqlite3_exec (database, [createSQL UTF8String],
+                      NULL, NULL, &errorMsg) != SQLITE_OK) {
+        sqlite3_close(database);
+        NSAssert(0, @"Error creating table: %s", errorMsg);
+    }
+    
+    dropReservationsSQL = @"DROP TABLE IF EXISTS LocalReservations;";
+    
+    if (sqlite3_exec (database, [dropReservationsSQL UTF8String],
+                      NULL, NULL, &errorMsg) != SQLITE_OK) {
+        sqlite3_close(database);
+        NSAssert(0, @"Error dropping table: %s", errorMsg);
+    }
+    
+    createSQL = @"CREATE TABLE IF NOT EXISTS LocalReservations "
+    "(commID INTEGER PRIMARY KEY AUTOINCREMENT, commStatutID INT, commRepID INT, "
+    "commClientID INT, commDateSaisie TEXT, "
+    "commCommentaire TEXT, commLastUpdated TEXT);";
+    
+    if (sqlite3_exec (database, [createSQL UTF8String],
+                      NULL, NULL, &errorMsg) != SQLITE_OK) {
+        sqlite3_close(database);
+        NSAssert(0, @"Error creating table: %s", errorMsg);
+    }
+    
+    dropReservationItemsSQL = @"DROP TABLE IF EXISTS LocalReservationItems;";
+    
+    if (sqlite3_exec (database, [dropReservationItemsSQL UTF8String],
+                      NULL, NULL, &errorMsg) != SQLITE_OK) {
+        sqlite3_close(database);
+        NSAssert(0, @"Error dropping table: %s", errorMsg);
+    }
+    
+    createSQL = @"CREATE TABLE IF NOT EXISTS LocalReservationItems "
+    "(commItemID INTEGER PRIMARY KEY AUTOINCREMENT, commItemCommID INT, commItemVinID INT, commItemVinQte INT);";
+    
+    if (sqlite3_exec (database, [createSQL UTF8String],
+                      NULL, NULL, &errorMsg) != SQLITE_OK) {
+        sqlite3_close(database);
+        NSAssert(0, @"Error creating table: %s", errorMsg);
+    }
+    
 }
 
 - (void)searchDisplayController:(UISearchDisplayController *)controller didLoadSearchResultsTableView:(UITableView *)tableView
@@ -2147,9 +2038,6 @@ NSData *jsonDataForModifiedReservations;
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     NSString *tmpUser = [[defaults objectForKey:@"repID_preference"] lowercaseString];
     NSString *tmpPassword = [defaults objectForKey:@"password"];
-    
-    NSLog(@"User: %@",tmpUser);
-    NSLog(@"Psw: %@",tmpPassword);
     
     NSURLSessionConfiguration *defaultConfigObject = [NSURLSessionConfiguration defaultSessionConfiguration];
     NSURLSession *defaultSession = [NSURLSession sessionWithConfiguration: defaultConfigObject delegate: nil delegateQueue: [NSOperationQueue mainQueue]];
@@ -2205,6 +2093,15 @@ NSData *jsonDataForModifiedReservations;
 }
 
 - (void) resCompleteSynch {
+    
+    appDelegate.ordersViewNeedsRefreshing = YES;
+    
+    hud                         = [MBProgressHUD showHUDAddedTo:self.view animated:YES];
+    hud.detailsLabelText        = @"Synchronisation des données";
+    hud.dimBackground           = YES;
+    hud.labelText               = @"SVP Patienter";
+    hud.mode                    = MBProgressHUDModeIndeterminate;
+    
     [self resSubmitLocalOrdersJson];
     [self resSubmitModifiedDraftOrdersJson];
     [self resSubmitLocalReservationsJson];
@@ -2212,15 +2109,11 @@ NSData *jsonDataForModifiedReservations;
     
     [self resResetLocalOrderDBs];
     
-    [self performSelector:@selector(resUpdateCommandesTable) withObject:nil afterDelay:2.0];
-    [self performSelector:@selector(resUpdateReservationsTable) withObject:nil afterDelay:2.0];
+    [self performSelector:@selector(resUpdateCommandesTable) withObject:nil afterDelay:3.0];
+    [self performSelector:@selector(resUpdateReservationsTable) withObject:nil afterDelay:3.0];
+    [self performSelector:@selector(resUpdateReservationItemsTable) withObject:nil afterDelay:3.0];
     
-    [self performSelector:@selector(resUpdateCommandeItemsTable) withObject:nil afterDelay:2.0];
-    [self performSelector:@selector(resUpdateReservationItemsTable) withObject:nil afterDelay:2.0];
-    
-    [self performSelector:@selector(refreshTableViewContent) withObject:nil afterDelay:10.0];
-    
-    
+    [self performSelector:@selector(resUpdateCommandeItemsTable) withObject:nil afterDelay:15.0];
 }
 
 - (void)resSyncErrorDetected {

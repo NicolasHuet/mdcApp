@@ -9,7 +9,7 @@
 #import <UIKit/UIKit.h>
 #import "Product.h"
 #import <sqlite3.h>
-#import "PRELocalDBTools.h"
+//#import "PRELocalDBTools.h"
 #import "MDCAppDelegate.h"
 #import "BIDProdDetailsViewController.h"
 
